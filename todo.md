@@ -1,0 +1,3 @@
+- [ ] Make CLI
+- [ ] Load from config
+- [ ] Create 'check_for_updates'

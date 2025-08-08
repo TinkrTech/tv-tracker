@@ -1,18 +1,12 @@
 import os
 import dotenv
-import tomllib
-import textwrap
-from datetime import datetime
-from pathlib import Path
+
 from dataclasses import dataclass
 from typing import Optional
 
 import utils
 import provider
-
-
-API_URL = "https://api4.thetvdb.com/v4/"
-CONFIG_PATH = Path("data/config.json")
+import series
 
 @dataclass(slots=True, frozen=True)
 class SeriesQuery:
@@ -40,10 +34,8 @@ def track(session_token: str, args: SeriesQuery):
     else:
         to_add = utils.select(f"Select one of the following:", matches)
 
-    series = provider.get_series_info(session_token, to_add.tvdb_id)
-
-    with config_path.open('a') as cfg:
-        cfg.write(str(series))
+    to_track = provider.get_series_info(session_token, to_add.tvdb_id)
+    series.add_to_config(config_path, to_track)
 
 
 def main():

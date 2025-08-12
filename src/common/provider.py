@@ -4,9 +4,10 @@ Note: This uses unsanitized inputs for routing. Use caution when loading config.
 import requests
 import urllib.parse
 import textwrap
+from dataclasses import dataclass
 from datetime import date
 
-import series
+from common import series
 
 
 @dataclass(slots=True, frozen=True)

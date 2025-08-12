@@ -1,50 +1,44 @@
-import os
+import os, sys
 import dotenv
 
+import argparse
 from dataclasses import dataclass
 from typing import Optional
 
-import utils
-import provider
-import series
-
-@dataclass(slots=True, frozen=True)
-class TrackArgs:
-    title: str
-    config_path: str
-    language: Optional[str] = 'eng'
-    year: Optional[str] = None
+import track
+import refresh
+from common import provider
 
 
-def track(session_token: str, args: TrackArgs):
-    results = provider.search(session_token, query={
-        'query': args.title,
-        'year': args.year,
-        'type': 'series',
-    })
-    same_language = lambda item: item.language == args.language
-    similar_name = lambda item: args.title in item.title
-    equal = utils.intersect(similar_name, same_language)
+def get_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(sys.argv[0], description="Keep track of the shows you watch, all in one place.")
+    parser.add_argument("-c", "--config-path", default="data/config.toml", help="The location of config.toml")
 
-    matches = list(filter(equal, results))
-    if len(matches) == 0:
-        print(f"No results for {args}..")
-        return
-    elif len(matches) == 1:
-        to_add = matches[0] if utils.confirm(f"Found:\n{matches[0]}\nStart tracking?(Y/n)") else None
-    else:
-        to_add = utils.select(f"Select one of the following:", matches)
+    subparsers = parser.add_subparsers(
+        dest="command",
+        title="Subcommands",
+        required=True
+    )
+    track.get_parser(subparsers)
+    refresh.get_parser(subparsers)
 
-    to_track = provider.get_series_info(session_token, to_add.tvdb_id)
-    series.add_to_config(args.config_path, to_track)
+    return parser.parse_args()
 
 
 def main():
+    args = get_args()
+    token = provider.tvdb_auth(os.getenv('TVDB_KEY'))
+    match args.command:
+        case "track":
+            track.track(token, args)
+        case "refresh":
+            print("Refreshing!")
+
     # token = provider.tvdb_auth(os.getenv("TVDB_KEY"))
-    tracked = series.from_config("data/config.toml")
-    for series in tracked:
-        print(series)
-        print()
+    # tracked = series.from_config("data/config.toml")
+    # for series in tracked:
+    #     print(series)
+    #     print()
 
 if __name__ == '__main__':
     dotenv.load_dotenv()

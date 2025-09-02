@@ -1,3 +1,7 @@
 - [x] Make CLI
 - [x] Load from config
-- [ ] Create 'check_for_updates'
+- [ ] Make spinner for requests
+- [ ] Create 'refresh'
+- [ ] Tracking deduplication
+- [ ] Add selection for Season Type
+- [ ] Remove seasons with no episodes from season count

@@ -1,4 +1,5 @@
 import argparse as ap
+import textwrap
 
 from common import utils
 from common import provider
@@ -9,7 +10,7 @@ def get_parser(parent: ap._SubParsersAction) -> ap.ArgumentParser:
     parser: ap.ArgumentParser = parent.add_parser('track', help="Adds a new series to the configuration to be tracked.")
     # see main.py for inherrited args
     parser.add_argument("title", help="The title of the show to add")
-    parser.add_argument("-L", "--lang", default="eng", help="The three letter acronym for the language of the series.")
+    parser.add_argument("-L", "--language", default="eng", help="The three letter acronym for the language of the series.")
     parser.add_argument("-y", "--year", default=None, help="The year the series first aired.")
     parser.set_defaults(which='track')
     return parser
@@ -27,10 +28,15 @@ def track(session_token: str, args: ap.Namespace):
 
     matches = list(filter(equal, results))
     if len(matches) == 0:
-        print(f"No results for {args}..")
+        year = args.year if args.year is not None else 'Any'
+        stub = f"title={args.title} year={year} language={args.language}"
+        print(f"No results for {stub}...")
         return
     elif len(matches) == 1:
-        to_add = matches[0] if utils.confirm(f"Found:\n{matches[0]}\nStart tracking?(Y/n)") else None
+        fmt_result = textwrap.indent(str(matches[0]), '  ')
+        if not utils.confirm(f"Found the following:\n{fmt_result}\nStart tracking?", default='y'):
+            return
+        to_add = matches[0]
     else:
         to_add = utils.select(f"Select one of the following:", matches)
 

@@ -9,23 +9,32 @@ from datetime import date
 
 from common import series
 
-
 @dataclass(slots=True, frozen=True)
 class SearchResult:
     tvdb_id: int
     title: str
-    year: str
+    year: str | None
     language: str
-    synopsis: str
+    synopsis: str | None
 
-    def __str__(self):
-        return textwrap.dedent(f"""\
+    def __str__(self) -> str:
+        indent = '  '
+        fmt_synopsis = "\n".join(textwrap.wrap(self.synopsis, width=80, initial_indent=indent, subsequent_indent=indent))
+        result = textwrap.dedent(f"""\
             id: {self.tvdb_id}
             title: {self.title}
             year: {self.year}
             language: {self.language}
-            synopsis: {self.synopsis}
         """).strip()
+        result += f"\nsynopsis:\n{fmt_synopsis}"
+        return result
+
+    def stub_info(self) -> str:
+        year = 'Unknown' if self.year is None else self.year
+        return f"{self.title} ({year})"
+
+    def full_info(self) -> str:
+        return str(self)
 
 
 def tvdb_auth(api_token: str) -> str:
@@ -58,11 +67,11 @@ def search(session_token: str, query: dict) -> list[SearchResult]:
     results = []
     for result in raw['data']:
         results.append(SearchResult(
-            tvdb_id=data['tvdb_id'],
-            title=data['name'],
-            language=data['primary_language'],
-            year=data['year'],
-            synopsis=data['overview'],
+            tvdb_id=result['tvdb_id'],
+            title=result['name'],
+            language=result['primary_language'],
+            year=result.get('year'),
+            synopsis=result.get('overview'),
         ))
     return results
 
@@ -80,7 +89,7 @@ def get_series_info(session_token: str, tvdb_id: int, use_order: str = None) -> 
 
     seasons = []
     for raw_season in raw.get("seasons"):
-        season = Season(
+        season = series.Season(
             tvdb_id=raw_season["id"],
             number=raw_season['number'],
             order=raw_season["type"]["name"]

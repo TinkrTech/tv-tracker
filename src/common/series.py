@@ -55,7 +55,7 @@ def from_config(config_path: PathLike) -> list[Series]:
 
 def add_to_config(config_path: PathLike, item: Series) -> None:
     with open(config_path, 'a') as cfg:
-        cfg.write(str(item))
+        cfg.write(str(item) + "\n\n")
 
 
 def update_config(config_path: PathLike, updated: list[Series]) -> None:

@@ -90,14 +90,14 @@ def get_series_info(session_token: str, tvdb_id: int, use_order: str = None) -> 
     seasons = []
     for raw_season in raw.get("seasons"):
         season = series.Season(
-            tvdb_id=raw_season["id"],
-            number=raw_season['number'],
+            tvdb_id=int(raw_season["id"]),
+            number=int(raw_season['number']),
             order=raw_season["type"]["name"]
         )
         seasons.append(season)
 
     return series.Series(
-        tvdb_id=tvdb_id,
+        tvdb_id=int(tvdb_id),
         title = raw["name"],
         year = raw["year"],
         last_aired = date.fromisoformat(raw["lastAired"]),

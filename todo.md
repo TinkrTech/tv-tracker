@@ -6,6 +6,7 @@
 - [x] Create 'refresh'
     - [x] Make fetching async
     - [x] Test refresh
-- [ ] Tracking deduplication
+- [x] Tracking deduplication
+    - [ ] Add a note next to items that are already cached
 - [ ] Add selection for Season Type
 - [ ] Remove seasons with no episodes from season count

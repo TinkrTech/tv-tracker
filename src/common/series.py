@@ -6,6 +6,7 @@ import textwrap
 from dataclasses import dataclass, field
 from typing import Optional, Self
 
+
 @dataclass(slots=True, frozen=True)
 class Season:
     tvdb_id: int
@@ -40,6 +41,9 @@ class Series:
             use_order = "{self.use_order}"
         """).strip()
 
+    def stub_info(self) -> str:
+        return f"{self.title} ({self.year})"
+
     def get_season_count(self) -> int:
         if self.season_count is None:
             return len([season for season in self.seasons if season.number != 0 and season.order == self.use_order])
@@ -53,7 +57,18 @@ def from_config(config_path: PathLike) -> list[Series]:
     return [Series(**entry) for entry in entries.values()]
 
 
+def is_in_config(config_path: PathLike, tvdb_id: int) -> bool:
+    assert isinstance(tvdb_id, int)
+
+    cached_ids = [tvdb_id for cached in from_config(config_path)]
+    return tvdb_id in cached_ids
+
+
 def add_to_config(config_path: PathLike, item: Series) -> None:
+    if is_in_config(config_path, item.tvdb_id):
+        print(f"WARNING: \"{item.stub_info()}\" is already being tracked. Skipping...")
+        return
+
     with open(config_path, 'a') as cfg:
         cfg.write(str(item) + "\n\n")
 

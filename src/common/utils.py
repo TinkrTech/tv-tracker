@@ -1,5 +1,8 @@
 from functools import reduce, wraps
 from typing import Protocol, Iterable, Callable
+import asyncio
+from collections.abc import Awaitable
+
 USE_ANIMATIONS = True
 
 class Stubbable(Protocol):
@@ -123,3 +126,11 @@ def with_spinner[T](func: Callable[..., T], message: str = "") -> Callable[..., 
         return with_spinner
     else:
         return without_spinner
+
+def as_async[T](func: Callable[..., T]) -> Awaitable[T]:
+    @wraps(func)
+    async def run(*args, loop=None, executor=None, **kwargs) -> T:
+        if loop is None:
+            loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(executor, lambda: func(*args, **kwargs))
+    return run

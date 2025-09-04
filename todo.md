@@ -1,9 +1,11 @@
 - [x] Make CLI
+    - [?] Add global -q/--quiet: select the first option that comes up if multiple
+    - [x] Add global -A / --no-animations: Disable animations
 - [x] Load from config
 - [x] Make spinner for requests
-    - [?] Add global -q/--quiet: select the first option that comes up if multiple
-    - [ ] Add global -A / --no-animations: Disable animations
-- [ ] Create 'refresh'
+- [x] Create 'refresh'
+    - [x] Make fetching async
+    - [x] Test refresh
 - [ ] Tracking deduplication
 - [ ] Add selection for Season Type
 - [ ] Remove seasons with no episodes from season count

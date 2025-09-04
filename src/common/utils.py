@@ -1,5 +1,6 @@
-from functools import reduce
-from typing import Protocol, Iterable
+from functools import reduce, wraps
+from typing import Protocol, Iterable, Callable
+USE_ANIMATIONS = True
 
 class Stubbable(Protocol):
     def stub_info(self) -> str:
@@ -14,10 +15,12 @@ def compose(*funcs):
         return lambda *a, **k: f(g(*a, **k))
     return reduce(_compose, funcs)
 
+
 def intersect(*funcs):
     def _intersect(f, g):
         return lambda *a, **k: f(*a, **k) and g(*a, **k)
     return reduce(_intersect, funcs)
+
 
 def confirm(prompt: str, default='y') -> bool:
     options = ('y', 'n')
@@ -68,3 +71,55 @@ def select(prompt: str, options: Iterable[Stubbable]) -> Stubbable:
         if confirm("Select this? ", default='n'):
             break
     return options[int(opt)]
+
+
+def with_spinner[T](func: Callable[..., T], message: str = "") -> Callable[..., T]:
+    """
+    Add an animated spinner to any function. Prints message and updates the end of the line in stdout until the function completes.
+    On success                        - Replace spinner with the PASS character
+    On Exception or KeyboardInterrupt - Replace spinner with the FAIL character
+    """
+    import sys
+    import threading
+    import time
+
+    PASS = "🟢" # "✅"
+    FAIL = "🔴" # "❌"
+
+    def spin(is_done: Callable[..., bool]) -> None:
+        spinner = ['/','-','\\','|']
+        i = 0
+        print(message, end="  ")
+        while not is_done():
+            print(f"\b{spinner[i]}", end="", file=sys.stdout, flush=True)
+            i = (i + 1) % len(spinner)
+            time.sleep(0.15)
+
+    @wraps(func)
+    def with_spinner(*args, **kwargs) -> T:
+        done = False
+        spin_thread = threading.Thread(target=lambda: spin(lambda: done))
+        try:
+            spin_thread.start()
+            result = func(*args, **kwargs)
+            print(f"\b{PASS}")
+        except Exception as e:
+            print(f"\b{FAIL}")
+            raise e
+        except KeyboardInterrupt as e:
+            print(f"\b\b\b{FAIL} ^C")
+            raise e
+        finally:
+            done = True
+            spin_thread.join()
+        return result
+
+    @wraps(func)
+    def without_spinner(*args, **kwargs) -> T:
+        print(message)
+        return func(*args, **kwargs)
+
+    if USE_ANIMATIONS:
+        return with_spinner
+    else:
+        return without_spinner

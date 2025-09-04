@@ -61,4 +61,4 @@ def add_to_config(config_path: PathLike, item: Series) -> None:
 def update_config(config_path: PathLike, updated: list[Series]) -> None:
     with open(config_path, "w") as cfg:
         for item in updated:
-            cfg.write(str(item))
+            cfg.write(str(item) + "\n\n")

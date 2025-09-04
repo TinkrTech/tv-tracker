@@ -1,6 +1,8 @@
 - [x] Make CLI
 - [x] Load from config
-- [ ] Make spinner for requests
+- [x] Make spinner for requests
+    - [?] Add global -q/--quiet: select the first option that comes up if multiple
+    - [ ] Add global -A / --no-animations: Disable animations
 - [ ] Create 'refresh'
 - [ ] Tracking deduplication
 - [ ] Add selection for Season Type

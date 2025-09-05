@@ -7,6 +7,7 @@ from typing import Optional
 
 import track
 import refresh
+import remove
 
 from common import provider
 from common import utils
@@ -26,6 +27,7 @@ def get_args() -> argparse.Namespace:
 
     track.get_parser(commands, defaults)
     refresh.get_parser(commands, defaults)
+    remove.get_parser(commands, defaults)
 
     args = parser.parse_args()
     if args.no_animations:
@@ -40,6 +42,8 @@ def main():
             track.track(token, args)
         case "refresh":
             refresh.refresh(token, args)
+        case "remove":
+            remove.remove(args)
 
 if __name__ == '__main__':
     dotenv.load_dotenv()

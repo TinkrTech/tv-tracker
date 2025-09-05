@@ -8,7 +8,7 @@ from typing import Optional, Self
 @dataclass(slots=True, frozen=True)
 class Episode:
     tvdb_id: int
-    name: str
+    title: str
     number: int
     aired: Optional[date]
 
@@ -50,6 +50,9 @@ class Series:
 
     def stub_info(self) -> str:
         return f"{self.title} ({self.year})"
+
+    def full_info(self) -> str:
+        return str(self)
 
     def get_season_count(self) -> int:
         if self.season_count is None:

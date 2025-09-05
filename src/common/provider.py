@@ -87,7 +87,7 @@ def get_episodes(session_token: str, season_id: int) -> list[model.Episode]:
 
         result.append(model.Episode(
             tvdb_id=int(episode["id"]),
-            name=episode["name"],
+            title=episode["name"],
             number=episode["number"],
             aired=aired
         ))

@@ -9,9 +9,10 @@
     - [ ] Add progress bar or spinner
 - [x] Tracking deduplication
     - [ ] Add a note next to items that are already cached
-- [ ] Create 'remove'
+- [x] Create 'remove'
 - [ ] Create 'modify'
     - [ ] Add selection for Season Type
+- [ ] Create 'list'
 - [x] Remove seasons with no episodes from season count
 - [ ] Add multi-language support
 - [ ] Bugfix - Defaulting for confirm

@@ -8,10 +8,19 @@ from typing import Optional, Self
 
 
 @dataclass(slots=True, frozen=True)
+class Episode:
+    tvdb_id: int
+    name: str
+    number: int
+    aired: Optional[date]
+
+
+@dataclass(slots=True, frozen=True)
 class Season:
     tvdb_id: int
     number: int
     order: str
+    episodes: list[Episode] = field(default_factory=list)
 
 
 @dataclass(slots=True, frozen=True)
@@ -46,7 +55,13 @@ class Series:
 
     def get_season_count(self) -> int:
         if self.season_count is None:
-            return len([season for season in self.seasons if season.number != 0 and season.order == self.use_order])
+            seasons = [
+                season for season in self.seasons
+                if season.number != 0
+                and season.order == self.use_order
+                and len(season.episodes) != 0
+            ]
+            return len(seasons)
         else:
             return self.season_count
 

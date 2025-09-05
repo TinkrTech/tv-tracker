@@ -15,4 +15,6 @@ wheels/
 # VSCode config
 .vscode
 
+# Things that don't need to be in the repo
 data/
+**/tinker_*.py

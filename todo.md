@@ -6,7 +6,10 @@
 - [x] Create 'refresh'
     - [x] Make fetching async
     - [x] Test refresh
+    - [ ] Add progress bar or spinner
 - [x] Tracking deduplication
     - [ ] Add a note next to items that are already cached
 - [ ] Add selection for Season Type
-- [ ] Remove seasons with no episodes from season count
+- [x] Remove seasons with no episodes from season count
+- [ ] Add multi-language support
+- [ ] Bugfix - Defaulting for confirm

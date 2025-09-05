@@ -76,8 +76,26 @@ def search(session_token: str, query: dict) -> list[SearchResult]:
     return results
 
 
-def get_series_info(session_token: str, tvdb_id: int, use_order: str = None) -> series.Series:
-    raw = _make_request(session_token, endpoint=f"series/{tvdb_id}/extended")["data"]
+def get_episodes(session_token: str, season_id: int) -> list[series.Episode]:
+    raw = _make_request(session_token, endpoint=f"seasons/{season_id}/extended")["data"]
+    result = []
+    for episode in raw["episodes"]:
+        if episode["aired"] is not None:
+            aired = date.fromisoformat(episode["aired"])
+        else:
+            aired = None
+
+        result.append(series.Episode(
+            tvdb_id=int(episode["id"]),
+            name=episode["name"],
+            number=episode["number"],
+            aired=aired
+        ))
+    return result
+
+
+def get_series_info(session_token: str, series_id: int, use_order: str = None) -> series.Series:
+    raw = _make_request(session_token, endpoint=f"series/{series_id}/extended")["data"]
 
     keep_updated = raw\
         .get('status', {})\
@@ -89,15 +107,18 @@ def get_series_info(session_token: str, tvdb_id: int, use_order: str = None) -> 
 
     seasons = []
     for raw_season in raw.get("seasons"):
+        season_id = int(raw_season["id"])
+        episodes = get_episodes(session_token, season_id)
         season = series.Season(
-            tvdb_id=int(raw_season["id"]),
+            tvdb_id=season_id,
             number=int(raw_season['number']),
-            order=raw_season["type"]["name"]
+            order=raw_season["type"]["name"],
+            episodes=episodes
         )
         seasons.append(season)
 
     return series.Series(
-        tvdb_id=int(tvdb_id),
+        tvdb_id=int(series_id),
         title = raw["name"],
         year = raw["year"],
         last_aired = date.fromisoformat(raw["lastAired"]),

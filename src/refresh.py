@@ -1,7 +1,8 @@
 import argparse as ap
 import asyncio
 
-from common import series
+from common.model import Series
+from common import cache
 from common import provider
 from common import utils
 
@@ -14,7 +15,7 @@ def get_parser(subparser: ap._SubParsersAction, defaults: ap.ArgumentParser) -> 
 
 
 @utils.as_async
-def fetch_series(session_token: str, cached: series.Series, force: bool = False) -> series.Series:
+def fetch_series(session_token: str, cached: Series, force: bool = False) -> Series:
     if not cached.keep_updated and not force:
         return cached
 
@@ -25,9 +26,9 @@ def fetch_series(session_token: str, cached: series.Series, force: bool = False)
 async def _refresh(session_token: str, args: ap.Namespace):
     bound_fetch = lambda cached: fetch_series(session_token, cached, args.force)
 
-    cache = series.from_config(args.config_path)
-    updated: list[series.Series] = await asyncio.gather(*[bound_fetch(cached) for cached in cache])
-    series.update_config(args.config_path, updated)
+    all_series = cache.load(args.cache_path)
+    updated: list[Series] = await asyncio.gather(*[bound_fetch(series) for series in all_series])
+    cache.update(args.cache_path, updated)
 
 
 def refresh(session_token: str, args: ap.Namespace):

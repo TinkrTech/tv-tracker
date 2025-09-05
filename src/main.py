@@ -7,13 +7,14 @@ from typing import Optional
 
 import track
 import refresh
+
 from common import provider
 from common import utils
 
 
 def get_args() -> argparse.Namespace:
     defaults = argparse.ArgumentParser(add_help=False)
-    defaults.add_argument("-c", "--config-path", default="data/config.toml", help="The location of config.toml")
+    defaults.add_argument("-c", "--cache-path", default="data/cache.toml", help="The location of config.toml")
     defaults.add_argument("-A", "--no-animations", default=False, help="Disable loading animations", action="store_true")
 
     parser = argparse.ArgumentParser(sys.argv[0], parents=[defaults], description="Keep track of the shows you watch, all in one place.")
@@ -39,12 +40,6 @@ def main():
             track.track(token, args)
         case "refresh":
             refresh.refresh(token, args)
-
-    # token = provider.tvdb_auth(os.getenv("TVDB_KEY"))
-    # tracked = series.from_config("data/config.toml")
-    # for series in tracked:
-    #     print(series)
-    #     print()
 
 if __name__ == '__main__':
     dotenv.load_dotenv()

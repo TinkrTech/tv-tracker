@@ -3,8 +3,7 @@ import textwrap
 
 from common import utils
 from common import provider
-from common import series
-
+from common import cache
 
 def get_parser(subparser: ap._SubParsersAction, defaults: ap.ArgumentParser) -> ap.ArgumentParser:
     parser: ap.ArgumentParser = subparser.add_parser('track', parents=[defaults], help="Adds a new series to the configuration to be tracked.")
@@ -44,4 +43,4 @@ def track(session_token: str, args: ap.Namespace):
 
     _get_series_info = utils.with_spinner(provider.get_series_info, "Fetch full series info")
     to_track = _get_series_info(session_token, to_add.tvdb_id)
-    series.add_to_config(args.config_path, to_track)
+    cache.add(args.cache_path, to_track)

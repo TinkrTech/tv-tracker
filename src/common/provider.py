@@ -7,7 +7,7 @@ import textwrap
 from dataclasses import dataclass
 from datetime import date
 
-from common import series
+from common import model
 
 @dataclass(slots=True, frozen=True)
 class SearchResult:
@@ -76,7 +76,7 @@ def search(session_token: str, query: dict) -> list[SearchResult]:
     return results
 
 
-def get_episodes(session_token: str, season_id: int) -> list[series.Episode]:
+def get_episodes(session_token: str, season_id: int) -> list[model.Episode]:
     raw = _make_request(session_token, endpoint=f"seasons/{season_id}/extended")["data"]
     result = []
     for episode in raw["episodes"]:
@@ -85,7 +85,7 @@ def get_episodes(session_token: str, season_id: int) -> list[series.Episode]:
         else:
             aired = None
 
-        result.append(series.Episode(
+        result.append(model.Episode(
             tvdb_id=int(episode["id"]),
             name=episode["name"],
             number=episode["number"],
@@ -94,7 +94,7 @@ def get_episodes(session_token: str, season_id: int) -> list[series.Episode]:
     return result
 
 
-def get_series_info(session_token: str, series_id: int, use_order: str = None) -> series.Series:
+def get_series_info(session_token: str, series_id: int, use_order: str = None) -> model.Series:
     raw = _make_request(session_token, endpoint=f"series/{series_id}/extended")["data"]
 
     keep_updated = raw\
@@ -109,7 +109,7 @@ def get_series_info(session_token: str, series_id: int, use_order: str = None) -
     for raw_season in raw.get("seasons"):
         season_id = int(raw_season["id"])
         episodes = get_episodes(session_token, season_id)
-        season = series.Season(
+        season = model.Season(
             tvdb_id=season_id,
             number=int(raw_season['number']),
             order=raw_season["type"]["name"],
@@ -117,7 +117,7 @@ def get_series_info(session_token: str, series_id: int, use_order: str = None) -
         )
         seasons.append(season)
 
-    return series.Series(
+    return model.Series(
         tvdb_id=int(series_id),
         title = raw["name"],
         year = raw["year"],

@@ -1,6 +1,4 @@
-import tomllib
 from datetime import date
-from os import PathLike
 import textwrap
 
 from dataclasses import dataclass, field
@@ -64,31 +62,3 @@ class Series:
             return len(seasons)
         else:
             return self.season_count
-
-
-def from_config(config_path: PathLike) -> list[Series]:
-    with open(config_path, 'rb') as cfg:
-        entries = tomllib.load(cfg)
-    return [Series(**entry) for entry in entries.values()]
-
-
-def is_in_config(config_path: PathLike, tvdb_id: int) -> bool:
-    assert isinstance(tvdb_id, int)
-
-    cached_ids = [tvdb_id for cached in from_config(config_path)]
-    return tvdb_id in cached_ids
-
-
-def add_to_config(config_path: PathLike, item: Series) -> None:
-    if is_in_config(config_path, item.tvdb_id):
-        print(f"WARNING: \"{item.stub_info()}\" is already being tracked. Skipping...")
-        return
-
-    with open(config_path, 'a') as cfg:
-        cfg.write(str(item) + "\n\n")
-
-
-def update_config(config_path: PathLike, updated: list[Series]) -> None:
-    with open(config_path, "w") as cfg:
-        for item in updated:
-            cfg.write(str(item) + "\n\n")

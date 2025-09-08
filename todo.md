@@ -12,9 +12,9 @@
 - [x] Create 'remove'
 - [ ] Create 'modify'
     - [ ] Add selection for Season Type
-- [ ] Create 'list'
+- [x] Create 'list'
 - [x] Remove seasons with no episodes from season count
 - [ ] Add multi-language support
 - [x] Bugfix - Defaulting for confirm
 - [ ] Add tests for each command
-- [ ] Make main.py stand alone
+- [ ] Make main.py stand-alone

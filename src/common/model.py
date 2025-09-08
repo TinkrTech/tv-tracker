@@ -52,7 +52,8 @@ class Series:
         return f"{self.title} ({self.year})"
 
     def full_info(self) -> str:
-        return str(self)
+        no_header_lines = str(self).split('\n')[1:]
+        return "\n".join(no_header_lines)
 
     def get_season_count(self) -> int:
         if self.season_count is None:

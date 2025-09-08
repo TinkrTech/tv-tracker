@@ -25,14 +25,31 @@ def get_args() -> argparse.Namespace:
         required=True
     )
 
-    track.get_parser(commands, defaults)
+    list_parser = commands.add_parser("list", parents=[defaults], help="Lists all tracked series.")
+    list_parser.add_argument("-f", "--full", default=False, action="store_true", help="List the full details for each series.")
+
     refresh.get_parser(commands, defaults)
     remove.get_parser(commands, defaults)
+    track.get_parser(commands, defaults)
 
     args = parser.parse_args()
     if args.no_animations:
         utils.USE_ANIMATIONS = False
     return args
+
+
+def _list(args: argparse.Namespace) -> None:
+    import common.cache
+    import textwrap
+
+    tracked = common.cache.load(args.cache_path)
+    for i, series in enumerate(tracked, 1):
+        print(f"{i} - {series.stub_info()}")
+        if args.full:
+            fmt_info = textwrap.indent(series.full_info(), '  ')
+            print(fmt_info)
+            print()
+
 
 def main():
     args = get_args()
@@ -40,10 +57,13 @@ def main():
     match args.command:
         case "track":
             track.track(token, args)
+        case "list":
+            _list(args)
         case "refresh":
             refresh.refresh(token, args)
         case "remove":
             remove.remove(args)
+
 
 if __name__ == '__main__':
     dotenv.load_dotenv()

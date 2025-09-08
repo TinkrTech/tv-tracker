@@ -15,5 +15,6 @@
 - [ ] Create 'list'
 - [x] Remove seasons with no episodes from season count
 - [ ] Add multi-language support
-- [ ] Bugfix - Defaulting for confirm
+- [x] Bugfix - Defaulting for confirm
 - [ ] Add tests for each command
+- [ ] Make main.py stand alone

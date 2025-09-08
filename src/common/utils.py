@@ -44,14 +44,12 @@ def confirm(prompt: str, default='y') -> bool:
     prompt += f" [{fmt_options}]>"
 
     while opt := input(prompt).strip().lower():
-        if opt == '':
-            opt = default
-        elif opt in options:
+        if opt in options or opt == '':
             break
         else:
             print(f"Invalid selection '{opt}'")
 
-    return opt == 'y'
+    return opt == 'y' or opt == ''
 
 
 def select(prompt: str, options: Iterable[Stubbable]) -> Stubbable:

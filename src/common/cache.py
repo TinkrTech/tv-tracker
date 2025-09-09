@@ -27,7 +27,7 @@ def has(tvdb_id: int) -> bool:
 
     load()
 
-    cached_ids = [tvdb_id for cached in __CACHE]
+    cached_ids = [cached.tvdb_id for cached in __CACHE]
     return tvdb_id in cached_ids
 
 

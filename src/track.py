@@ -43,4 +43,4 @@ def track(session_token: str, args: ap.Namespace):
 
     _get_series_info = utils.with_spinner(provider.get_series_info, "Fetch full series info")
     to_track = _get_series_info(session_token, to_add.tvdb_id)
-    cache.add(args.cache_path, to_track)
+    cache.add(to_track)

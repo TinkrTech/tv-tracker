@@ -11,7 +11,7 @@ def get_parser(subparser: ap._SubParsersAction, defaults: ap.ArgumentParser) -> 
     return parser
 
 def remove(args: ap.Namespace) -> None:
-    all_series = cache.load(args.cache_path)
+    all_series = cache.load()
 
     to_remove = []
     for title in args.title:
@@ -31,4 +31,4 @@ def remove(args: ap.Namespace) -> None:
         return
 
     updated = [series for series in all_series if series not in to_remove]
-    cache.update(args.cache_path, updated)
+    cache.update(updated)

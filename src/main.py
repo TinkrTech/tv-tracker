@@ -9,6 +9,7 @@ import track
 import refresh
 import remove
 
+from common import cache
 from common import provider
 from common import utils
 
@@ -39,10 +40,9 @@ def get_args() -> argparse.Namespace:
 
 
 def _list(args: argparse.Namespace) -> None:
-    import common.cache
     import textwrap
 
-    tracked = common.cache.load(args.cache_path)
+    tracked = common.cache.load()
     for i, series in enumerate(tracked, 1):
         print(f"{i} - {series.stub_info()}")
         if args.full:
@@ -53,7 +53,12 @@ def _list(args: argparse.Namespace) -> None:
 
 def main():
     args = get_args()
-    token = provider.tvdb_auth(os.getenv('TVDB_KEY'))
+
+    fetch_token = utils.with_spinner(provider.tvdb_auth, "Fetching session token")
+    token = fetch_token(os.getenv('TVDB_KEY'))
+
+    cache.PATH = args.cache_path
+
     match args.command:
         case "track":
             track.track(token, args)

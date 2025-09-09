@@ -39,7 +39,7 @@ def track(session_token: str, args: ap.Namespace):
             return
         to_add = matches[0]
     else:
-        to_add = utils.select(f"Select one of the following:", matches)
+        to_add = utils.select(f"Select one of the following:\n   * = already tracked", matches)
 
     _get_series_info = utils.with_spinner(provider.get_series_info, "Fetch full series info")
     to_track = _get_series_info(session_token, to_add.tvdb_id)

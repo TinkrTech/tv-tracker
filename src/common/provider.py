@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from datetime import date
 
 from common import model
+from common import cache
+
 
 @dataclass(slots=True, frozen=True)
 class SearchResult:
@@ -16,11 +18,13 @@ class SearchResult:
     year: str | None
     language: str
     synopsis: str | None
+    is_tracked: bool
 
     def __str__(self) -> str:
         indent = '  '
         fmt_synopsis = "\n".join(textwrap.wrap(self.synopsis, width=80, initial_indent=indent, subsequent_indent=indent))
         result = textwrap.dedent(f"""\
+            tracked? {self.is_tracked}
             id: {self.tvdb_id}
             title: {self.title}
             year: {self.year}
@@ -31,7 +35,8 @@ class SearchResult:
 
     def stub_info(self) -> str:
         year = 'Unknown' if self.year is None else self.year
-        return f"{self.title} ({year})"
+        tracked = "* " if self.is_tracked else "  "
+        return f"{tracked}{self.title} ({year})"
 
     def full_info(self) -> str:
         return str(self)
@@ -66,12 +71,14 @@ def search(session_token: str, query: dict) -> list[SearchResult]:
     raw = _make_request(session_token, 'search', query=filtered_query)
     results = []
     for result in raw['data']:
+        series_id = int(result['tvdb_id'])
         results.append(SearchResult(
-            tvdb_id=result['tvdb_id'],
+            tvdb_id=series_id,
             title=result['name'],
             language=result['primary_language'],
             year=result.get('year'),
             synopsis=result.get('overview'),
+            is_tracked=cache.has(series_id)
         ))
     return results
 

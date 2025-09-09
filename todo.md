@@ -8,7 +8,7 @@
     - [x] Test refresh
     - [ ] Add progress bar or spinner
 - [x] Tracking deduplication
-    - [ ] Add a note next to items that are already cached
+    - [x] Add a note next to items that are already cached
 - [x] Create 'remove'
 - [ ] Create 'modify'
     - [ ] Add selection for Season Type

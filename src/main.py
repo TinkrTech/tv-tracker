@@ -58,6 +58,7 @@ def main():
     token = fetch_token(os.getenv('TVDB_KEY'))
 
     cache.PATH = args.cache_path
+    utils.USE_ANIMATIONS = not args.no_animations
 
     match args.command:
         case "track":

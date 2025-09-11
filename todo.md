@@ -10,8 +10,8 @@
 - [x] Tracking deduplication
     - [x] Add a note next to items that are already cached
 - [x] Create 'remove'
-- [ ] Create 'modify'
-    - [ ] Add selection for Season Type
+- [x] Create 'modify'
+    - [x] Add selection for Season Type
 - [x] Create 'list'
     - [ ] Add optional series flag to get full info for one item
     - [ ] Or "info" command

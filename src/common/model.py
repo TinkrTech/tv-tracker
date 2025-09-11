@@ -2,6 +2,8 @@ from datetime import date
 import textwrap
 
 from dataclasses import dataclass, field
+import dataclasses
+
 from typing import Optional, Self
 
 
@@ -66,3 +68,8 @@ class Series:
             return len(seasons)
         else:
             return self.season_count
+
+    def using(self, **kwargs) -> Self:
+        fields = dataclasses.asdict(self)
+        fields.update(kwargs)
+        return Series(**fields)

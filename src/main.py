@@ -8,6 +8,7 @@ from typing import Optional
 import track
 import refresh
 import remove
+import modify
 
 from common import cache
 from common import provider
@@ -32,6 +33,7 @@ def get_args() -> argparse.Namespace:
     refresh.get_parser(commands, defaults)
     remove.get_parser(commands, defaults)
     track.get_parser(commands, defaults)
+    modify.get_parser(commands, defaults)
 
     args = parser.parse_args()
     if args.no_animations:
@@ -55,20 +57,25 @@ def main():
     args = get_args()
 
     fetch_token = utils.with_spinner(provider.tvdb_auth, "Fetching session token")
-    token = fetch_token(os.getenv('TVDB_KEY'))
+
 
     cache.PATH = args.cache_path
     utils.USE_ANIMATIONS = not args.no_animations
 
     match args.command:
-        case "track":
-            track.track(token, args)
         case "list":
             _list(args)
-        case "refresh":
-            refresh.refresh(token, args)
         case "remove":
             remove.remove(args)
+        case "modify":
+            modify.modify(args)
+        case "track":
+            token = fetch_token(os.getenv('TVDB_KEY'))
+            track.track(token, args)
+        case "refresh":
+            token = fetch_token(os.getenv('TVDB_KEY'))
+            refresh.refresh(token, args)
+
 
 
 if __name__ == '__main__':

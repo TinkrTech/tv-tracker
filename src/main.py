@@ -42,7 +42,7 @@ def get_args() -> argparse.Namespace:
 def _list(args: argparse.Namespace) -> None:
     import textwrap
 
-    tracked = common.cache.load()
+    tracked = cache.load()
     for i, series in enumerate(tracked, 1):
         print(f"{i} - {series.stub_info()}")
         if args.full:

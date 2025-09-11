@@ -33,4 +33,6 @@ async def _refresh(session_token: str, args: ap.Namespace):
 
 
 def refresh(session_token: str, args: ap.Namespace):
-    return asyncio.run(_refresh(session_token, args))
+    _sync_refresh = utils.compose(asyncio.run, _refresh)
+    _spinner_refresh = utils.with_spinner(_sync_refresh, "Refreshing")
+    return _spinner_refresh(session_token, args)

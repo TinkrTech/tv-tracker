@@ -48,8 +48,9 @@ def confirm(prompt: str, default='y') -> bool:
             break
         else:
             print(f"Invalid selection '{opt}'")
-
-    return opt == 'y' or opt == ''
+    if opt == '':
+        opt = default
+    return opt == 'y'
 
 
 def select(prompt: str, options: Iterable[Stubbable]) -> Stubbable:

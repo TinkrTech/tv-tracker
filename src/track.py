@@ -10,7 +10,8 @@ def get_parser(subparser: ap._SubParsersAction, defaults: ap.ArgumentParser) -> 
     # see main.py for inherrited args
     parser.set_defaults(which='track')
     parser.add_argument("title", help="The title of the show to add")
-    parser.add_argument("-L", "--language", default="eng", help="The three letter acronym for the language of the series.")
+    parser.add_argument("-l", "--language", default="eng", help="The three letter original language of the series.")
+    parser.add_argument("-t", "--translate", default="eng", help="The three letter translation lanuage for the title and synopsis.")
     parser.add_argument("-y", "--year", default=None, help="The year the series first aired.")
     return parser
 
@@ -23,13 +24,14 @@ def track(session_token: str, args: ap.Namespace):
     results = _search(session_token, query={
         'query': args.title,
         'year': args.year,
+        'language': args.language,
         'type': 'series',
-    })
-    same_language = lambda item: item.language == args.language
-    similar_name = lambda item: args.title in item.title
-    equal = utils.intersect(similar_name, same_language)
+    }, translate=args.translate)
 
-    matches = list(filter(equal, results))
+    matches = [result for result in results
+        if result.language == args.language
+        and args.title in result.title
+    ]
     if len(matches) == 0:
         print(f"No results")
         return
@@ -42,5 +44,5 @@ def track(session_token: str, args: ap.Namespace):
         to_add = utils.select(f"Select one of the following:\n   * = already tracked", matches)
 
     _get_series_info = utils.with_spinner(provider.get_series_info, "Fetch full series info")
-    to_track = _get_series_info(session_token, to_add.tvdb_id)
+    to_track = _get_series_info(session_token, to_add.tvdb_id, use_language=args.translate)
     cache.add(to_track)

@@ -34,9 +34,14 @@ class Series:
     use_order: str
     orders: list[str]
     seasons: list[Season] = field(default_factory=list)
+    use_language: Optional[str] = None
     season_count: Optional[int] = None
 
     def __str__(self) -> str:
+        nullable_fields = []
+        if self.use_language is not None:
+            nullable_fields.append(f'use_language = "{self.use_language}"')
+
         return textwrap.dedent(f"""\
             ["{self.title} ({self.year})"]
             tvdb_id = {self.tvdb_id}
@@ -48,7 +53,7 @@ class Series:
             keep_updated = {str(self.keep_updated).lower()}
             orders = {self.orders}
             use_order = "{self.use_order}"
-        """).strip()
+        """).strip() + "\n" + "\n".join(nullable_fields)
 
     def stub_info(self) -> str:
         return f"{self.title} ({self.year})"

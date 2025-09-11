@@ -15,6 +15,7 @@ from common import cache
 class SearchResult:
     tvdb_id: int
     title: str
+    original_title: str
     year: str | None
     language: str
     synopsis: str | None
@@ -26,6 +27,7 @@ class SearchResult:
         result = textwrap.dedent(f"""\
             tracked? {self.is_tracked}
             id: {self.tvdb_id}
+            original_title: {self.original_title}
             title: {self.title}
             year: {self.year}
             language: {self.language}
@@ -66,18 +68,30 @@ def _make_request(session_token: str, endpoint: str, *, query: dict = None) -> d
     return response.json()
 
 
-def search(session_token: str, query: dict) -> list[SearchResult]:
+def search(session_token: str, query: dict, translate: str='eng') -> list[SearchResult]:
     filtered_query = {key: value for key, value in query.items() if value is not None}
     raw = _make_request(session_token, 'search', query=filtered_query)
     results = []
     for result in raw['data']:
         series_id = int(result['tvdb_id'])
+
+        default_name = result["name"]
+        name = result\
+            .get("translations")\
+            .get(translate, default_name)
+
+        default_synopsis = result.get('overview')
+        synopsis = result\
+            .get("overviews")\
+            .get(translate, default_synopsis)
+
         results.append(SearchResult(
             tvdb_id=series_id,
-            title=result['name'],
+            title=name,
+            original_title=result["name"],
             language=result['primary_language'],
             year=result.get('year'),
-            synopsis=result.get('overview'),
+            synopsis=synopsis,
             is_tracked=cache.has(series_id)
         ))
     return results
@@ -101,7 +115,7 @@ def get_episodes(session_token: str, season_id: int) -> list[model.Episode]:
     return result
 
 
-def get_series_info(session_token: str, series_id: int, use_order: str = None) -> model.Series:
+def get_series_info(session_token: str, series_id: int, use_language: str = None, use_order: str = None) -> model.Series:
     raw = _make_request(session_token, endpoint=f"series/{series_id}/extended")["data"]
 
     keep_updated = raw\
@@ -124,14 +138,20 @@ def get_series_info(session_token: str, series_id: int, use_order: str = None) -
         )
         seasons.append(season)
 
+    title = raw["name"]
+    if use_language is not None:
+        translation = _make_request(session_token, endpoint=f"series/{series_id}/translations/{use_language}")["data"]
+        title = translation["name"]
+
     return model.Series(
         tvdb_id=int(series_id),
-        title = raw["name"],
+        title = title,
         year = raw["year"],
         last_aired = date.fromisoformat(raw["lastAired"]),
         retrieved = date.today(),
         keep_updated=keep_updated,
-        use_order=use_order,
         orders=orders,
+        use_order=use_order,
         seasons=seasons,
+        use_language=use_language,
     )

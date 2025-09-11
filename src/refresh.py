@@ -20,7 +20,13 @@ def fetch_series(session_token: str, cached: Series, force: bool = False) -> Ser
     if not cached.keep_updated and not force:
         return cached
 
-    fetched = provider.get_series_info(session_token, cached.tvdb_id, use_order=cached.use_order)
+    fetched = provider.get_series_info(
+        session_token,
+        cached.tvdb_id,
+        use_language=cached.use_language,
+        use_order=cached.use_order
+    )
+
     return fetched
 
 

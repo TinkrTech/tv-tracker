@@ -5,15 +5,11 @@ from common import utils
 from common import provider
 from common import cache
 
-def get_parser(subparser: ap._SubParsersAction, defaults: ap.ArgumentParser) -> ap.ArgumentParser:
-    parser: ap.ArgumentParser = subparser.add_parser('track', parents=[defaults], help="Adds a new series to the configuration to be tracked.")
-    # see main.py for inherrited args
-    parser.set_defaults(which='track')
+def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("title", help="The title of the show to add")
     parser.add_argument("-l", "--language", default="eng", help="The three letter original language of the series.")
     parser.add_argument("-t", "--translate", default="eng", help="The three letter translation lanuage for the title and synopsis.")
     parser.add_argument("-y", "--year", default=None, help="The year the series first aired.")
-    return parser
 
 
 def track(session_token: str, args: ap.Namespace):

@@ -2,14 +2,9 @@ import argparse as ap
 
 import common.cache
 
-def get_parser(subparser: ap._SubParsersAction, defaults: ap.ArgumentParser) -> ap.ArgumentParser:
-    parser: ap.ArgumentParser = subparser.add_parser('modify', parents=[defaults], help="Modify series' configuration(s).")
-    # see main.py for inherrited args
+def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("series", nargs="+", help="The series to update.")
     parser.add_argument("-o", "--use-order", help="Change which season order should be used when fetching updates.")
-
-    parser.set_defaults(which='modify')
-    return parser
 
 
 def modify(args: ap.Namespace):

@@ -28,14 +28,20 @@ def get_args() -> argparse.Namespace:
         required=True
     )
 
-    list_parser = commands.add_parser("list", parents=[defaults], help="Lists all tracked series.")
+    def make_parser(name: str, description: str) -> argparse.ArgumentParser:
+        nonlocal commands, defaults
+        result: argparse.ArgumentParser = commands.add_parser(name, parents=[defaults], help=description)
+        result.set_defaults(which=name)
+        return result
+
+    list_parser = make_parser("list", "Lists all tracked series.")
     list_parser.add_argument("title", nargs="*", help="Only list the info for series containing this title.")
     list_parser.add_argument("-f", "--full", default=False, action="store_true", help="List the full details for each series.")
 
-    refresh.get_parser(commands, defaults)
-    remove.get_parser(commands, defaults)
-    track.get_parser(commands, defaults)
-    modify.get_parser(commands, defaults)
+    refresh.add_args(make_parser(   "refresh",  "Pulls the latest information for tracked series."))
+    remove.add_args(make_parser(    "remove",   "Stop tracking one or more series."))
+    track.add_args(make_parser(     "track",    "Adds a new series to the configuration to be tracked."))
+    modify.add_args(make_parser(    "modify",   "Modify series' configuration(s)."))
 
     args = parser.parse_args()
     if args.no_animations:

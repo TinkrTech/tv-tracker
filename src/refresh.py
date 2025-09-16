@@ -7,12 +7,8 @@ from common import provider
 from common import utils
 
 
-def get_parser(subparser: ap._SubParsersAction, defaults: ap.ArgumentParser) -> ap.ArgumentParser:
-    parser: ap.ArgumentParser = subparser.add_parser('refresh', parents=[defaults], help="Pulls the latest information for tracked series.")
-    # see main.py for inherrited args
+def add_args(parser: ap.ArgumentParser):
     parser.add_argument("--force", default=False, action="store_true", help="Force refresh all series")
-    parser.set_defaults(which='refresh')
-    return parser
 
 
 @utils.as_async

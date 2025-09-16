@@ -2,13 +2,11 @@ import argparse as ap
 from common import cache
 from common import utils
 
-def get_parser(subparser: ap._SubParsersAction, defaults: ap.ArgumentParser) -> ap.ArgumentParser:
-    parser: ap.ArgumentParser = subparser.add_parser('remove', parents=[defaults], help="Stop tracking one or more series.")
-    # see main.py for inherrited args
+
+def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("title", nargs='+', help="The name(s) of shows to remove")
     parser.add_argument("-y", "--year", default=None, help="The year the series first aired.")
-    parser.set_defaults(which='remove')
-    return parser
+
 
 def remove(args: ap.Namespace) -> None:
     all_series = cache.load()

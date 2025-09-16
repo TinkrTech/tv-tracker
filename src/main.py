@@ -13,6 +13,7 @@ import modify
 from common import cache
 from common import provider
 from common import utils
+from common import model
 
 
 def get_args() -> argparse.Namespace:
@@ -28,6 +29,7 @@ def get_args() -> argparse.Namespace:
     )
 
     list_parser = commands.add_parser("list", parents=[defaults], help="Lists all tracked series.")
+    list_parser.add_argument("title", nargs="*", help="Only list the info for series containing this title.")
     list_parser.add_argument("-f", "--full", default=False, action="store_true", help="List the full details for each series.")
 
     refresh.get_parser(commands, defaults)
@@ -43,9 +45,20 @@ def get_args() -> argparse.Namespace:
 
 def _list(args: argparse.Namespace) -> None:
     import textwrap
+    if len(args.title) > 0:
+        def matches_title(series: model.Series) -> bool:
+            for title in args.title:
+                if title.lower() in series.title.lower():
+                    return True
+            return False
+    else:
+        matches_title = lambda series: True
 
     tracked = cache.load()
     for i, series in enumerate(tracked, 1):
+        if not matches_title(series):
+            continue
+
         print(f"{i} - {series.stub_info()}")
         if args.full:
             fmt_info = textwrap.indent(series.full_info(), '  ')

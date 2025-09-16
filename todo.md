@@ -13,8 +13,8 @@
 - [x] Create 'modify'
     - [x] Add selection for Season Type
 - [x] Create 'list'
-    - [ ] Add optional series flag to get full info for one item
-    - [ ] Or "info" command
+    - [x] Add optional series flag to get full info for one item
+    - [-] Or "info" command
 - [x] Remove seasons with no episodes from season count
 - [x] Add multi-language support
     - [x] use translations to index if the requested language is different from series language
@@ -22,3 +22,4 @@
 - [ ] Add tests for each command
 - [ ] Make main.py stand-alone
 - [ ] Rework cache configuration i.e. use_order and use_language into a sub-object
+- [ ] Add 'fetch-episodes'

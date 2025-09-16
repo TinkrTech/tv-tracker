@@ -42,7 +42,7 @@ class Series:
         if self.use_language is not None:
             nullable_fields.append(f'use_language = "{self.use_language}"')
 
-        return textwrap.dedent(f"""\
+        result = textwrap.dedent(f"""\
             ["{self.title} ({self.year})"]
             tvdb_id = {self.tvdb_id}
             title = "{self.title}"
@@ -53,7 +53,10 @@ class Series:
             keep_updated = {str(self.keep_updated).lower()}
             orders = {self.orders}
             use_order = "{self.use_order}"
-        """).strip() + "\n" + "\n".join(nullable_fields)
+        """).strip()
+        if len(nullable_fields) > 0:
+            result += "\n" + "\n".join(nullable_fields)
+        return result
 
     def stub_info(self) -> str:
         return f"{self.title} ({self.year})"

@@ -1,6 +1,7 @@
 import tomllib
 from os import PathLike
-from typing import Iterable
+# from typing import Iterable
+from collections.abc import Iterable, Iterator
 
 from common.model import Series
 
@@ -22,13 +23,28 @@ def load() -> list[Series]:
 
 
 def has(tvdb_id: int) -> bool:
-    global PATH, __CACHE
+    global __CACHE
     assert isinstance(tvdb_id, int)
 
     load()
 
     cached_ids = [cached.tvdb_id for cached in __CACHE]
     return tvdb_id in cached_ids
+
+
+def fuzzy_find(titles: str|list[str]) -> Iterator[Series]:
+    global __CACHE
+    assert titles is not None
+
+    load()
+
+    if not isinstance(titles, list):
+        titles = [titles]
+
+    for title in titles:
+        for series in __CACHE:
+            if title.lower() in series.title.lower():
+                yield series
 
 
 def add(item: Series) -> None:

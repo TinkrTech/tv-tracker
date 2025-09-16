@@ -9,6 +9,7 @@ import track
 import refresh
 import remove
 import modify
+import fetch_episodes
 
 from common import cache
 from common import provider
@@ -34,14 +35,15 @@ def get_args() -> argparse.Namespace:
         result.set_defaults(which=name)
         return result
 
-    list_parser = make_parser("list", "Lists all tracked series.")
+    list_parser = make_parser(          "list",             "Lists all tracked series.")
     list_parser.add_argument("title", nargs="*", help="Only list the info for series containing this title.")
     list_parser.add_argument("-f", "--full", default=False, action="store_true", help="List the full details for each series.")
 
-    refresh.add_args(make_parser(   "refresh",  "Pulls the latest information for tracked series."))
-    remove.add_args(make_parser(    "remove",   "Stop tracking one or more series."))
-    track.add_args(make_parser(     "track",    "Adds a new series to the configuration to be tracked."))
-    modify.add_args(make_parser(    "modify",   "Modify series' configuration(s)."))
+    refresh.add_args(make_parser(       "refresh",          "Pulls the latest information for tracked series."))
+    remove.add_args(make_parser(        "remove",           "Stop tracking one or more series."))
+    track.add_args(make_parser(         "track",            "Adds a new series to the configuration to be tracked."))
+    modify.add_args(make_parser(        "modify",           "Modify series' configuration(s)."))
+    fetch_episodes.add_args(make_parser("fetch-episodes",   "Fetches episode info and dusplays it."))
 
     args = parser.parse_args()
     if args.no_animations:
@@ -51,20 +53,14 @@ def get_args() -> argparse.Namespace:
 
 def _list(args: argparse.Namespace) -> None:
     import textwrap
-    if len(args.title) > 0:
-        def matches_title(series: model.Series) -> bool:
-            for title in args.title:
-                if title.lower() in series.title.lower():
-                    return True
-            return False
-    else:
-        matches_title = lambda series: True
+    from itertools import chain
 
     tracked = cache.load()
-    for i, series in enumerate(tracked, 1):
-        if not matches_title(series):
-            continue
 
+    if len(args.title) > 0:
+        tracked = cache.fuzzy_find(args.title)
+
+    for i, series in enumerate(tracked, 1):
         print(f"{i} - {series.stub_info()}")
         if args.full:
             fmt_info = textwrap.indent(series.full_info(), '  ')

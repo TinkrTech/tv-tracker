@@ -22,4 +22,7 @@
 - [ ] Add tests for each command
 - [ ] Make main.py stand-alone
 - [ ] Rework cache configuration i.e. use_order and use_language into a sub-object
-- [ ] Add 'fetch-episodes'
+- [x] Add 'fetch-episodes'
+    - [-] Extract "search" from track so it can be used here?
+    - [ ] Refactor how seasons in an order are stored in the model
+- [ ] Use logger instead of print > allows main to disable output

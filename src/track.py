@@ -39,6 +39,6 @@ def track(session_token: str, args: ap.Namespace):
     else:
         to_add = utils.select(f"Select one of the following:\n   * = already tracked", matches)
 
-    _get_series_info = utils.with_spinner(provider.get_series_info, "Fetch full series info")
+    _get_series_info = utils.with_spinner(provider.get_series_info, "Fetching full series info")
     to_track = _get_series_info(session_token, to_add.tvdb_id, use_language=args.translate)
     cache.add(to_track)

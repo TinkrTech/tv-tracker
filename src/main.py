@@ -43,7 +43,7 @@ def get_args() -> argparse.Namespace:
     remove.add_args(make_parser(        "remove",           "Stop tracking one or more series."))
     track.add_args(make_parser(         "track",            "Adds a new series to the configuration to be tracked."))
     modify.add_args(make_parser(        "modify",           "Modify series' configuration(s)."))
-    fetch_episodes.add_args(make_parser("fetch-episodes",   "Fetches episode info and dusplays it."))
+    fetch_episodes.add_args(make_parser("fetch-episodes",   "Fetches episodes list for a tracked series and displays it."))
 
     args = parser.parse_args()
     if args.no_animations:
@@ -90,6 +90,9 @@ def main():
         case "refresh":
             token = fetch_token(os.getenv('TVDB_KEY'))
             refresh.refresh(token, args)
+        case "fetch-episodes":
+            token = fetch_token(os.getenv('TVDB_KEY'))
+            fetch_episodes.fetch_episodes(token, args)
 
 
 

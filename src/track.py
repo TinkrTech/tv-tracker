@@ -7,7 +7,7 @@ from common import cache
 
 def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("title", help="The title of the show to add")
-    parser.add_argument("-l", "--language", default="eng", help="The three letter original language of the series.")
+    parser.add_argument("-l", "--language", help="The three letter original language of the series.")
     parser.add_argument("-t", "--translate", default="eng", help="The three letter translation lanuage for the title and synopsis.")
     parser.add_argument("-y", "--year", default=None, help="The year the series first aired.")
 
@@ -16,18 +16,21 @@ def track(session_token: str, args: ap.Namespace):
     year = args.year if args.year is not None else 'Any'
     query_stub = f"title={args.title} year={year} language={args.language}"
 
-    _search = utils.with_spinner(provider.search, message=f"Querying TVDB for {query_stub}")
-    results = _search(session_token, query={
+    query = {
         'query': args.title,
         'year': args.year,
-        'language': args.language,
         'type': 'series',
-    }, translate=args.translate)
+    }
+    if args.language is not None:
+        query["language"] = args.language
 
-    matches = [result for result in results
-        if result.language == args.language
-        and args.title in result.title
-    ]
+    _search = utils.with_spinner(provider.search, message=f"Querying TVDB for {query_stub}")
+    results = _search(session_token, query=query, translate=args.translate)
+
+    same_language = lambda x: args.language is None or args.language == x.language
+    title_is_similar = lambda x: args.title in x.title
+    matches = list(filter(utils.intersect(same_language, title_is_similar), results))
+
     if len(matches) == 0:
         print(f"No results")
         return

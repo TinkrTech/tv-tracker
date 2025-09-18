@@ -26,3 +26,4 @@
     - [-] Extract "search" from track so it can be used here?
     - [ ] Refactor how seasons in an order are stored in the model
 - [ ] Use logger instead of print > allows main to disable output
+- [x] BUG: Track: Use any language when not provided as optional arg

@@ -77,12 +77,12 @@ def search(session_token: str, query: dict, translate: str='eng') -> list[Search
 
         default_name = result["name"]
         name = result\
-            .get("translations")\
+            .get("translations", {})\
             .get(translate, default_name)
 
         default_synopsis = result.get('overview')
         synopsis = result\
-            .get("overviews")\
+            .get("overviews", {})\
             .get(translate, default_synopsis)
 
         results.append(SearchResult(

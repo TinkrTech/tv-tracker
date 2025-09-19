@@ -1,5 +1,5 @@
 from functools import reduce, wraps
-from typing import Protocol, Iterable, Callable
+from typing import Protocol, Sequence, Callable, TypeVar
 import asyncio
 from collections.abc import Awaitable
 
@@ -11,6 +11,8 @@ class Stubbable(Protocol):
 
     def full_info(self) -> str:
         """Return a single-line string that uniquely categorizes the object"""
+
+Selectable = TypeVar("Selectable", bound=Stubbable)
 
 
 def compose(*funcs):
@@ -53,7 +55,7 @@ def confirm(prompt: str, default='y') -> bool:
     return opt == 'y'
 
 
-def select(prompt: str, options: Iterable[Stubbable]) -> Stubbable:
+def select(prompt: str, options: Sequence[Selectable]) -> Selectable:
     prompt += "\n" + "\n".join([f"{i}: {option.stub_info()}" for i, option in enumerate(options)])
     prompt += "\nor 'info <selection>' for more details\n>"
     while opt := input(prompt).strip().lower():
@@ -126,7 +128,7 @@ def with_spinner[T](func: Callable[..., T], message: str = "") -> Callable[..., 
     else:
         return without_spinner
 
-def as_async[T](func: Callable[..., T]) -> Awaitable[T]:
+def as_async[T](func: Callable[..., T]) -> Callable[..., Awaitable[T]]:
     @wraps(func)
     async def run(*args, loop=None, executor=None, **kwargs) -> T:
         if loop is None:

@@ -1,9 +1,20 @@
 import argparse as ap
 import textwrap
+from typing import Protocol
 
-from common.provider import Provider
+from common.provider import SearchResult
 from common import utils
 from common import cache
+from common.model import Series
+
+# This class is used for Duck-Typing; if it walks like a duck and quacks like a duck, it's a duck
+class Provider(Protocol):
+    def search(self, query: dict|None, translate: str) -> list[SearchResult]:
+        ...
+
+    def get_series_info(self, series_id: int, use_language: str|None, use_order: str|None) -> Series:
+        ...
+
 
 def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("title", help="The title of the show to add")

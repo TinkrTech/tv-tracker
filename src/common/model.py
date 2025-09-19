@@ -77,7 +77,7 @@ class Series:
         else:
             return self.season_count
 
-    def using(self, **kwargs) -> Self:
+    def using(self, **kwargs) -> 'Series':
         fields = dataclasses.asdict(self)
         fields.update(kwargs)
         return Series(**fields)

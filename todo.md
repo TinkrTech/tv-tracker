@@ -26,8 +26,9 @@
     - [-] Extract "search" from track so it can be used here?
     - [ ] Refactor how seasons in an order are stored in the model
 - [x] BUG: Track: Use any language when not provided as optional arg
-- [ ] TESTING:
-    - [ ] Add tests for each command
+- [-] TESTING:
+    - [-] Add tests for each command
     - [x] Refactor 'provider' into class for better testability
         - [x] Readd-spinners
-    - [ ] Use logger instead of print > allows main to disable output
+    - [x] Fix Typing and add protocol classes
+- [ ] Use logger instead of print > allows main to disable output

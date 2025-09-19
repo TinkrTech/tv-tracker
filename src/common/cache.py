@@ -1,24 +1,24 @@
 import tomllib
-from os import PathLike
-# from typing import Iterable
 from collections.abc import Iterable, Iterator
 
 from common.model import Series
 
 
-PATH = None
-__CACHE: list[Series] = None
+PATH: str = ''
+__CACHE: list[Series] = []
+__LOADED = False
 
 
 def load() -> list[Series]:
-    global PATH, __CACHE
+    global PATH, __CACHE, __LOADED
+    assert PATH != ''
 
-    if __CACHE is None:
+    if not __LOADED:
         with open(PATH, 'rb') as cfg:
             entries = tomllib.load(cfg)
 
         __CACHE = [Series(**entry) for entry in entries.values()]
-
+        __LOADED = True
     return __CACHE
 
 

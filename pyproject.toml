@@ -5,6 +5,9 @@ description = "Get notified when new episodes and seasons of TV Shows get releas
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "mypy>=1.18.2",
+    "pytest>=8.4.2",
     "python-dotenv>=1.1.1",
     "requests>=2.32.4",
+    "types-requests>=2.32.4.20250913",
 ]

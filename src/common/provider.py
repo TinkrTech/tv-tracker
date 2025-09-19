@@ -9,6 +9,7 @@ from datetime import date
 
 from common import model
 from common import cache
+from typing import Optional
 
 
 @dataclass(slots=True, frozen=True)
@@ -23,7 +24,11 @@ class SearchResult:
 
     def __str__(self) -> str:
         indent = '  '
-        fmt_synopsis = "\n".join(textwrap.wrap(self.synopsis, width=80, initial_indent=indent, subsequent_indent=indent))
+        if self.synopsis is None:
+            fmt_synopsis = "[No synopsis]"
+        else:
+            fmt_synopsis = "\n".join(textwrap.wrap(self.synopsis, width=80, initial_indent=indent, subsequent_indent=indent))
+
         result = textwrap.dedent(f"""\
             tracked? {self.is_tracked}
             id: {self.tvdb_id}
@@ -44,7 +49,7 @@ class SearchResult:
         return str(self)
 
 
-class Provider:
+class TVDBProvider:
     def __init__(self, api_token: str):
         self._session_token = self._get_session_token(api_token)
 
@@ -61,10 +66,10 @@ class Provider:
         token = response.json()["data"]["token"]
         return token
 
-    def _make_request(self, endpoint: str, *, query: dict = None) -> dict:
+    def _make_request(self, endpoint: str, *, query: Optional[dict] = None) -> dict:
         if query is not None:
-            query = urllib.parse.urlencode(query=query)
-            endpoint += f"?{query}"
+            encoded_query = urllib.parse.urlencode(query=query)
+            endpoint += f"?{encoded_query}"
         AUTH_HEADER = {"Authorization": f"Bearer {self._session_token}"}
         response = requests.get(f"https://api4.thetvdb.com/v4/{endpoint}", headers=AUTH_HEADER)
         response.raise_for_status()
@@ -115,7 +120,7 @@ class Provider:
             ))
         return result
 
-    def get_series_info(self, series_id: int, use_language: str = None, use_order: str = None) -> model.Series:
+    def get_series_info(self, series_id: int, use_language: Optional[str] = None, use_order: Optional[str] = None) -> model.Series:
         raw = self._make_request(endpoint=f"series/{series_id}/extended")["data"]
 
         keep_updated = raw\

@@ -1,9 +1,15 @@
 import argparse as ap
+from typing import Protocol
 
 from common import utils
 from common import cache
-from common.provider import Provider
 from common.model import Series, Episode
+
+
+# This class is used for Duck-Typing; if it walks like a duck and quacks like a duck, it's a duck
+class Provider(Protocol):
+    def get_series_info(self, series_id: int, use_language: str|None, use_order: str|None) -> Series:
+        ...
 
 
 def add_args(parser: ap.ArgumentParser) -> None:
@@ -18,7 +24,7 @@ def fetch_episodes(provider: Provider, args: ap.Namespace) -> None:
         return
     if len(tracked) > 1:
         print(f"Matched {len(tracked)} items.")
-        selection = utils.select("Select one of the following", tracked)
+        selection: Series = utils.select("Select one of the following", tracked)
     else:
         selection = tracked[0]
 

@@ -1,10 +1,16 @@
 import argparse as ap
 import asyncio
+from typing import Protocol
 
 from common.model import Series
 from common import cache
-from common.provider import Provider
 from common import utils
+
+
+# This class is used for Duck-Typing; if it walks like a duck and quacks like a duck, it's a duck
+class Provider(Protocol):
+    def get_series_info(self, series_id: int, use_language: str|None, use_order: str|None) -> Series:
+        ...
 
 
 def add_args(parser: ap.ArgumentParser):
@@ -33,7 +39,7 @@ async def _refresh(provider: Provider, args: ap.Namespace):
     cache.update(updated)
 
 
-def refresh(session_token: str, args: ap.Namespace):
+def refresh(provider: Provider, args: ap.Namespace):
     _sync_refresh = utils.compose(asyncio.run, _refresh)
     _spinner_refresh = utils.with_spinner(_sync_refresh, "Refreshing")
-    return _spinner_refresh(session_token, args)
+    return _spinner_refresh(provider, args)

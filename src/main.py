@@ -11,7 +11,7 @@ import remove
 import modify
 import fetch_episodes
 
-from common.provider import Provider
+from common.provider import TVDBProvider
 from common import cache
 from common import utils
 from common import model
@@ -53,12 +53,11 @@ def get_args() -> argparse.Namespace:
 
 def _list(args: argparse.Namespace) -> None:
     import textwrap
-    from itertools import chain
 
     tracked = cache.load()
 
     if len(args.title) > 0:
-        tracked = cache.fuzzy_find(args.title)
+        tracked = list(cache.fuzzy_find(args.title))
 
     for i, series in enumerate(tracked, 1):
         print(f"{i} - {series.stub_info()}")
@@ -75,7 +74,7 @@ def main():
     cache.PATH = args.cache_path
     utils.USE_ANIMATIONS = not args.no_animations
 
-    make_provider = utils.with_spinner(Provider, "Fetching session token")
+    make_provider = utils.with_spinner(TVDBProvider, "Fetching session token")
 
     match args.command:
         case "list":

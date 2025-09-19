@@ -15,6 +15,9 @@ wheels/
 # VSCode config
 .vscode
 
+# MyPy Cache
+.mypy_cache
+
 # Things that don't need to be in the repo
 data/
 **/tinker_*.py

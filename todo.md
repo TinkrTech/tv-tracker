@@ -19,11 +19,15 @@
 - [x] Add multi-language support
     - [x] use translations to index if the requested language is different from series language
 - [x] Bugfix - Defaulting for confirm
-- [ ] Add tests for each command
 - [ ] Make main.py stand-alone
-- [ ] Rework cache configuration i.e. use_order and use_language into a sub-object
+- [-] Rework cache configuration i.e. use_order and use_language into a sub-object
+    - [ ] Is this even worth the effort?
 - [x] Add 'fetch-episodes'
     - [-] Extract "search" from track so it can be used here?
     - [ ] Refactor how seasons in an order are stored in the model
-- [ ] Use logger instead of print > allows main to disable output
 - [x] BUG: Track: Use any language when not provided as optional arg
+- [ ] TESTING:
+    - [ ] Add tests for each command
+    - [x] Refactor 'provider' into class for better testability
+        - [x] Readd-spinners
+    - [ ] Use logger instead of print > allows main to disable output

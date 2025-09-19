@@ -11,8 +11,8 @@ import remove
 import modify
 import fetch_episodes
 
+from common.provider import Provider
 from common import cache
-from common import provider
 from common import utils
 from common import model
 
@@ -70,12 +70,12 @@ def _list(args: argparse.Namespace) -> None:
 
 def main():
     args = get_args()
-
-    fetch_token = utils.with_spinner(provider.tvdb_auth, "Fetching session token")
-
+    dotenv.load_dotenv()
 
     cache.PATH = args.cache_path
     utils.USE_ANIMATIONS = not args.no_animations
+
+    make_provider = utils.with_spinner(Provider, "Fetching session token")
 
     match args.command:
         case "list":
@@ -85,19 +85,24 @@ def main():
         case "modify":
             modify.modify(args)
         case "track":
-            token = fetch_token(os.getenv('TVDB_KEY'))
-            track.track(token, args)
+            track.track(
+                make_provider(os.getenv('TVDB_KEY')),
+                args
+            )
         case "refresh":
-            token = fetch_token(os.getenv('TVDB_KEY'))
-            refresh.refresh(token, args)
+            refresh.refresh(
+                make_provider(os.getenv('TVDB_KEY')),
+                args
+            )
         case "fetch-episodes":
-            token = fetch_token(os.getenv('TVDB_KEY'))
-            fetch_episodes.fetch_episodes(token, args)
+            fetch_episodes.fetch_episodes(
+                make_provider(os.getenv('TVDB_KEY')),
+                args
+            )
 
 
 
 if __name__ == '__main__':
-    dotenv.load_dotenv()
     try:
         main()
     except KeyboardInterrupt:

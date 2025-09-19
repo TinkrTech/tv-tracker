@@ -3,7 +3,7 @@ import asyncio
 
 from common.model import Series
 from common import cache
-from common import provider
+from common.provider import Provider
 from common import utils
 
 
@@ -12,22 +12,21 @@ def add_args(parser: ap.ArgumentParser):
 
 
 @utils.as_async
-def fetch_series(session_token: str, cached: Series, force: bool = False) -> Series:
-    if not cached.keep_updated and not force:
-        return cached
+def fetch_series(provider: Provider, tracked: Series, force: bool = False) -> Series:
+    if not tracked.keep_updated and not force:
+        return tracked
 
     fetched = provider.get_series_info(
-        session_token,
-        cached.tvdb_id,
-        use_language=cached.use_language,
-        use_order=cached.use_order
+        tracked.tvdb_id,
+        use_language=tracked.use_language,
+        use_order=tracked.use_order
     )
 
     return fetched
 
 
-async def _refresh(session_token: str, args: ap.Namespace):
-    bound_fetch = lambda cached: fetch_series(session_token, cached, args.force)
+async def _refresh(provider: Provider, args: ap.Namespace):
+    bound_fetch = lambda tracked: fetch_series(provider, tracked, args.force)
 
     all_series = cache.load()
     updated: list[Series] = await asyncio.gather(*[bound_fetch(series) for series in all_series])

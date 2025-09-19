@@ -44,114 +44,114 @@ class SearchResult:
         return str(self)
 
 
-def tvdb_auth(api_token: str) -> str:
-    """
-    throws: requests.exceptions.HTTPError
-    """
-    data = r'{"apikey": "%s"}' % api_token
-    headers = {
-        "Content-Type": "application/json"
-    }
-    response = requests.post(f"https://api4.thetvdb.com/v4/login", data=data, headers=headers)
-    response.raise_for_status()
-    token = response.json()["data"]["token"]
-    return token
+class Provider:
+    def __init__(self, api_token: str):
+        self._session_token = self._get_session_token(api_token)
 
+    def _get_session_token(self, api_token: str) -> str:
+        """
+        throws: requests.exceptions.HTTPError
+        """
+        data = r'{"apikey": "%s"}' % api_token
+        headers = {
+            "Content-Type": "application/json"
+        }
+        response = requests.post(f"https://api4.thetvdb.com/v4/login", data=data, headers=headers)
+        response.raise_for_status()
+        token = response.json()["data"]["token"]
+        return token
 
-def _make_request(session_token: str, endpoint: str, *, query: dict = None) -> dict:
-    if query is not None:
-        query = urllib.parse.urlencode(query=query)
-        endpoint += f"?{query}"
-    AUTH_HEADER = {"Authorization": f"Bearer {session_token}"}
-    response = requests.get(f"https://api4.thetvdb.com/v4/{endpoint}", headers=AUTH_HEADER)
-    response.raise_for_status()
-    return response.json()
+    def _make_request(self, endpoint: str, *, query: dict = None) -> dict:
+        if query is not None:
+            query = urllib.parse.urlencode(query=query)
+            endpoint += f"?{query}"
+        AUTH_HEADER = {"Authorization": f"Bearer {self._session_token}"}
+        response = requests.get(f"https://api4.thetvdb.com/v4/{endpoint}", headers=AUTH_HEADER)
+        response.raise_for_status()
+        return response.json()
 
+    def search(self, query: dict, translate: str='eng') -> list[SearchResult]:
+        filtered_query = {key: value for key, value in query.items() if value is not None}
+        raw = self._make_request('search', query=filtered_query)
+        results = []
+        for result in raw['data']:
+            series_id = int(result['tvdb_id'])
 
-def search(session_token: str, query: dict, translate: str='eng') -> list[SearchResult]:
-    filtered_query = {key: value for key, value in query.items() if value is not None}
-    raw = _make_request(session_token, 'search', query=filtered_query)
-    results = []
-    for result in raw['data']:
-        series_id = int(result['tvdb_id'])
+            default_name = result["name"]
+            name = result\
+                .get("translations", {})\
+                .get(translate, default_name)
 
-        default_name = result["name"]
-        name = result\
-            .get("translations", {})\
-            .get(translate, default_name)
+            default_synopsis = result.get('overview')
+            synopsis = result\
+                .get("overviews", {})\
+                .get(translate, default_synopsis)
 
-        default_synopsis = result.get('overview')
-        synopsis = result\
-            .get("overviews", {})\
-            .get(translate, default_synopsis)
+            results.append(SearchResult(
+                tvdb_id=series_id,
+                title=name,
+                original_title=result["name"],
+                language=result['primary_language'],
+                year=result.get('year'),
+                synopsis=synopsis,
+                is_tracked=cache.has(series_id)
+            ))
+        return results
 
-        results.append(SearchResult(
-            tvdb_id=series_id,
-            title=name,
-            original_title=result["name"],
-            language=result['primary_language'],
-            year=result.get('year'),
-            synopsis=synopsis,
-            is_tracked=cache.has(series_id)
-        ))
-    return results
+    def get_episodes(self, season_id: int) -> list[model.Episode]:
+        raw = self._make_request(endpoint=f"seasons/{season_id}/extended")["data"]
+        result = []
+        for episode in raw["episodes"]:
+            if episode["aired"] is not None:
+                aired = date.fromisoformat(episode["aired"])
+            else:
+                aired = None
 
+            result.append(model.Episode(
+                tvdb_id=int(episode["id"]),
+                title=episode["name"],
+                number=episode["number"],
+                aired=aired
+            ))
+        return result
 
-def get_episodes(session_token: str, season_id: int) -> list[model.Episode]:
-    raw = _make_request(session_token, endpoint=f"seasons/{season_id}/extended")["data"]
-    result = []
-    for episode in raw["episodes"]:
-        if episode["aired"] is not None:
-            aired = date.fromisoformat(episode["aired"])
-        else:
-            aired = None
+    def get_series_info(self, series_id: int, use_language: str = None, use_order: str = None) -> model.Series:
+        raw = self._make_request(endpoint=f"series/{series_id}/extended")["data"]
 
-        result.append(model.Episode(
-            tvdb_id=int(episode["id"]),
-            title=episode["name"],
-            number=episode["number"],
-            aired=aired
-        ))
-    return result
+        keep_updated = raw\
+            .get('status', {})\
+            .get("keepUpdated", True)
 
+        orders = [order["name"] for order in raw["seasonTypes"]]
+        if use_order is None:
+            use_order = orders[0]
 
-def get_series_info(session_token: str, series_id: int, use_language: str = None, use_order: str = None) -> model.Series:
-    raw = _make_request(session_token, endpoint=f"series/{series_id}/extended")["data"]
+        seasons = []
+        for raw_season in raw.get("seasons"):
+            season_id = int(raw_season["id"])
+            episodes = self.get_episodes(season_id)
+            season = model.Season(
+                tvdb_id=season_id,
+                number=int(raw_season['number']),
+                order=raw_season["type"]["name"],
+                episodes=episodes
+            )
+            seasons.append(season)
 
-    keep_updated = raw\
-        .get('status', {})\
-        .get("keepUpdated", True)
+        title = raw["name"]
+        if use_language is not None:
+            translation = self._make_request(endpoint=f"series/{series_id}/translations/{use_language}")["data"]
+            title = translation["name"]
 
-    orders = [order["name"] for order in raw["seasonTypes"]]
-    if use_order is None:
-        use_order = orders[0]
-
-    seasons = []
-    for raw_season in raw.get("seasons"):
-        season_id = int(raw_season["id"])
-        episodes = get_episodes(session_token, season_id)
-        season = model.Season(
-            tvdb_id=season_id,
-            number=int(raw_season['number']),
-            order=raw_season["type"]["name"],
-            episodes=episodes
+        return model.Series(
+            tvdb_id=int(series_id),
+            title = title,
+            year = raw["year"],
+            last_aired = date.fromisoformat(raw["lastAired"]),
+            retrieved = date.today(),
+            keep_updated=keep_updated,
+            orders=orders,
+            use_order=use_order,
+            seasons=seasons,
+            use_language=use_language,
         )
-        seasons.append(season)
-
-    title = raw["name"]
-    if use_language is not None:
-        translation = _make_request(session_token, endpoint=f"series/{series_id}/translations/{use_language}")["data"]
-        title = translation["name"]
-
-    return model.Series(
-        tvdb_id=int(series_id),
-        title = title,
-        year = raw["year"],
-        last_aired = date.fromisoformat(raw["lastAired"]),
-        retrieved = date.today(),
-        keep_updated=keep_updated,
-        orders=orders,
-        use_order=use_order,
-        seasons=seasons,
-        use_language=use_language,
-    )

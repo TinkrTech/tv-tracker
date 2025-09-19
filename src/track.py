@@ -1,8 +1,8 @@
 import argparse as ap
 import textwrap
 
+from common.provider import Provider
 from common import utils
-from common import provider
 from common import cache
 
 def add_args(parser: ap.ArgumentParser) -> None:
@@ -12,7 +12,7 @@ def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("-y", "--year", default=None, help="The year the series first aired.")
 
 
-def track(session_token: str, args: ap.Namespace):
+def track(provider: Provider, args: ap.Namespace):
     year = args.year if args.year is not None else 'Any'
     query_stub = f"title={args.title} year={year} language={args.language}"
 
@@ -25,7 +25,7 @@ def track(session_token: str, args: ap.Namespace):
         query["language"] = args.language
 
     _search = utils.with_spinner(provider.search, message=f"Querying TVDB for {query_stub}")
-    results = _search(session_token, query=query, translate=args.translate)
+    results = _search(query=query, translate=args.translate)
 
     same_language = lambda x: args.language is None or args.language == x.language
     title_is_similar = lambda x: args.title in x.title
@@ -43,5 +43,5 @@ def track(session_token: str, args: ap.Namespace):
         to_add = utils.select(f"Select one of the following:\n   * = already tracked", matches)
 
     _get_series_info = utils.with_spinner(provider.get_series_info, "Fetching full series info")
-    to_track = _get_series_info(session_token, to_add.tvdb_id, use_language=args.translate)
+    to_track = _get_series_info(series_id=to_add.tvdb_id, use_language=args.translate)
     cache.add(to_track)

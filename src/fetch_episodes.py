@@ -2,7 +2,7 @@ import argparse as ap
 
 from common import utils
 from common import cache
-from common import provider
+from common.provider import Provider
 from common.model import Series, Episode
 
 
@@ -11,7 +11,7 @@ def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("-s", "--season", type=int, help="The season number to fetch.")
 
 
-def fetch_episodes(session_token: str, args: ap.Namespace) -> None:
+def fetch_episodes(provider: Provider, args: ap.Namespace) -> None:
     tracked = list(cache.fuzzy_find(args.title))
     if len(tracked) == 0:
         print(f"WARNING: No tracked series matched the title '{args.title}'. Skipping...")
@@ -27,13 +27,14 @@ def fetch_episodes(session_token: str, args: ap.Namespace) -> None:
         return
 
     _get_series_info = utils.with_spinner(provider.get_series_info, "Fetching full series info")
-    series_info: Series = _get_series_info(session_token, selection.tvdb_id, use_order=selection.use_order, use_language=selection.use_language)
+    series_info: Series = _get_series_info(selection.tvdb_id, use_order=selection.use_order, use_language=selection.use_language)
 
     # filter seasons
     seasons = [
         season for season in series_info.seasons
         if season.order == selection.use_order
             and season.number != 0
+            and len(season.episodes) > 0
     ]
     if args.season is not None:
         seasons = [season for season in seasons if season.number == args.season]

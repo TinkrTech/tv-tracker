@@ -4,7 +4,7 @@ import textwrap
 from dataclasses import dataclass, field
 import dataclasses
 
-from typing import Optional, Self
+from typing import Optional
 
 
 @dataclass(slots=True, frozen=True)

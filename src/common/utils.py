@@ -4,6 +4,8 @@ import asyncio
 from collections.abc import Awaitable
 
 USE_ANIMATIONS = True
+QUIET = False
+
 
 class Stubbable(Protocol):
     def stub_info(self) -> str:
@@ -28,6 +30,10 @@ def intersect(*funcs):
 
 
 def confirm(prompt: str, default='y') -> bool:
+    global QUIET
+    if QUIET:
+        return True
+
     options = ('y', 'n')
     default = default.lower()
     assert default in options, "Default was not included in the valid options. Typo?"
@@ -56,6 +62,10 @@ def confirm(prompt: str, default='y') -> bool:
 
 
 def select(prompt: str, options: Sequence[Selectable]) -> Selectable:
+    global QUIET
+    if QUIET:
+        return options[0]
+
     prompt += "\n" + "\n".join([f"{i}: {option.stub_info()}" for i, option in enumerate(options)])
     prompt += "\nor 'info <selection>' for more details\n>"
     while opt := input(prompt).strip().lower():
@@ -123,7 +133,13 @@ def with_spinner[T](func: Callable[..., T], message: str = "") -> Callable[..., 
         print(message)
         return func(*args, **kwargs)
 
-    if USE_ANIMATIONS:
+    @wraps(func)
+    def without_output(*args, **kwargs) -> T:
+        return func(*args, **kwargs)
+
+    if QUIET:
+        return without_output
+    elif USE_ANIMATIONS:
         return with_spinner
     else:
         return without_spinner

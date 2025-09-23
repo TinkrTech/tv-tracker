@@ -1,5 +1,6 @@
 - [x] Make CLI
-    - [?] Add global -q/--quiet: select the first option that comes up if multiple
+    - [x] Add global -q/--quiet: select the first option that comes up if multiple
+        - [x] Use logger instead of print > allows main to disable output
     - [x] Add global -A / --no-animations: Disable animations
 - [x] Load from config
 - [x] Make spinner for requests
@@ -31,4 +32,3 @@
     - [x] Refactor 'provider' into class for better testability
         - [x] Readd-spinners
     - [x] Fix Typing and add protocol classes
-- [ ] Use logger instead of print > allows main to disable output

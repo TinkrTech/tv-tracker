@@ -1,5 +1,5 @@
 import argparse as ap
-
+import logging as log
 import common.cache
 
 def add_args(parser: ap.ArgumentParser) -> None:
@@ -13,7 +13,7 @@ def modify(args: ap.Namespace):
     updated_series = []
     for series in tracked_series:
         if args.use_order not in series.orders:
-            print(f"WARNING: Supported orders for \"{series.stub_info()}\" are {series.orders}. Skipping...")
+            log.warning(f"Supported orders for \"{series.stub_info()}\" are {series.orders}. Skipping...")
         else:
             series = series.using(
                 use_order=args.use_order

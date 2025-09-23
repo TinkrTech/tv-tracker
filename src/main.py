@@ -1,9 +1,6 @@
-import os, sys
-import dotenv
-
+import os, dotenv, sys
+import logging
 import argparse
-from dataclasses import dataclass
-from typing import Optional
 
 import track
 import refresh
@@ -19,8 +16,23 @@ from common import model
 
 def get_args() -> argparse.Namespace:
     defaults = argparse.ArgumentParser(add_help=False)
-    defaults.add_argument("-c", "--cache-path", default="data/cache.toml", help="The location of config.toml")
-    defaults.add_argument("-A", "--no-animations", default=False, help="Disable loading animations", action="store_true")
+    defaults.add_argument(
+        "-c", "--cache-path",
+        default="data/cache.toml",
+        help="The location of config.toml"
+    )
+    defaults.add_argument(
+        "-A", "--no-animations",
+        default=False,
+        action="store_true",
+        help="Disable loading animations"
+    )
+    defaults.add_argument(
+        "-q", "--quiet",
+        default=False,
+        action="store_true",
+        help="Run non-interactively. Disables non-functional output and auto-confirm all input"
+    )
 
     parser = argparse.ArgumentParser(sys.argv[0], parents=[defaults], description="Keep track of the shows you watch, all in one place.")
     commands = parser.add_subparsers(
@@ -67,12 +79,36 @@ def _list(args: argparse.Namespace) -> None:
             print()
 
 
+
+def init_logger(is_quiet: bool = False):
+    logger = logging.getLogger()
+    logger.setLevel(logging.NOTSET)
+
+    if not is_quiet:
+        info_handler = logging.StreamHandler(sys.stdout)
+        info_handler.setLevel(logging.INFO)
+        info_fmt = logging.Formatter("{message}", style="{")
+        info_handler.setFormatter(info_fmt)
+        info_handler.addFilter(lambda record: record.levelno <= logging.INFO)
+        logger.addHandler(info_handler)
+
+    warning_handler = logging.StreamHandler(sys.stderr)
+    warning_handler.setLevel(logging.WARNING)
+    warning_formatter = logging.Formatter("{levelname}: {message}", style="{")
+    warning_handler.setFormatter(warning_formatter)
+    logger.addHandler(warning_handler)
+
+    return logger
+
+
 def main():
     args = get_args()
     dotenv.load_dotenv()
+    init_logger(is_quiet=args.quiet)
 
     cache.PATH = args.cache_path
     utils.USE_ANIMATIONS = not args.no_animations
+    utils.QUIET = args.quiet
 
     make_provider = utils.with_spinner(TVDBProvider, "Fetching session token")
 

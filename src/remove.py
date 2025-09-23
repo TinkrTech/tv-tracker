@@ -1,4 +1,6 @@
 import argparse as ap
+import logging as log
+
 from common import cache
 from common import utils
 
@@ -15,15 +17,15 @@ def remove(args: ap.Namespace) -> None:
     for title in args.title:
         matches = [series for series in all_series if series.title == title]
         if len(matches) == 0:
-            print(f"Series '{title}' was not tracked, so was not removed.")
+            log.info(f"Series '{title}' was not tracked, so was not removed.")
         elif len(matches) == 1:
             to_remove.append(matches[0])
         else:
-            print(f"'{title}' is ambiguous ({len(matches)} matches). Retry with the -y/--year flag")
+            log.warning(f"'{title}' is ambiguous ({len(matches)} matches). Retry with the -y/--year flag.")
 
-    print("The following series will be no longer be tracked:")
+    log.info("The following series will be no longer be tracked:")
     for item in to_remove:
-        print(f"  {item.stub_info()}")
+        log.info(f"  {item.stub_info()}")
 
     if not utils.confirm("Do you want to continue?"):
         return

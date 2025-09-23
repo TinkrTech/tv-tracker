@@ -1,5 +1,6 @@
 import argparse as ap
 import textwrap
+import logging as log
 from typing import Protocol
 
 from common.provider import SearchResult
@@ -43,7 +44,7 @@ def track(provider: Provider, args: ap.Namespace):
     matches = list(filter(utils.intersect(same_language, title_is_similar), results))
 
     if len(matches) == 0:
-        print(f"No results")
+        log.info(f"No results")
         return
     elif len(matches) == 1:
         fmt_result = textwrap.indent(str(matches[0]), '  ')

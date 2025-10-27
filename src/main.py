@@ -70,11 +70,7 @@ def _list(args: argparse.Namespace) -> None:
     tracked = cache.load()
 
     if len(args.title) > 0:
-        if args.strict:
-            tracked = list(cache.strict_find(args.title))
-        else:
-            tracked = list(cache.fuzzy_find(args.title))
-
+        tracked = list(cache.find(args.title, strict=args.strict))
 
     for i, series in enumerate(tracked, 1):
         print(f"{i} - {series.stub_info()}")

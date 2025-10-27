@@ -32,7 +32,7 @@ def has(tvdb_id: int) -> bool:
     return tvdb_id in cached_ids
 
 
-def fuzzy_find(titles: str|list[str]) -> Iterator[Series]:
+def find(titles: str|list[str], *, strict=False) -> Iterator[Series]:
     global __CACHE
     assert titles is not None
 
@@ -41,23 +41,14 @@ def fuzzy_find(titles: str|list[str]) -> Iterator[Series]:
     if not isinstance(titles, list):
         titles = [titles]
 
-    for title in titles:
-        for series in __CACHE:
-            if title.lower() in series.title.lower():
-                yield series
-
-
-def strict_find(titles: str|list[str]) -> Iterator[Series]:
-    global __CACHE
-    assert titles is not None
-    load()
-
-    if not isinstance(titles, list):
-        titles = [titles]
+    if strict:
+        matches = lambda x, y: x == y
+    else:
+        matches = lambda x, y: x in y
 
     for title in titles:
         for series in __CACHE:
-            if title.lower() == series.title.lower():
+            if matches(title.lower(), series.title.lower()):
                 yield series
 
 

@@ -8,7 +8,7 @@ def add_args(parser: ap.ArgumentParser) -> None:
 
 
 def modify(args: ap.Namespace):
-    tracked_series = common.cache.fuzzy_find(args.title)
+    tracked_series = common.cache.find(args.title)
 
     updated_series = []
     for series in tracked_series:

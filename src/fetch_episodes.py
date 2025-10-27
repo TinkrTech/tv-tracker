@@ -21,7 +21,7 @@ def add_args(parser: ap.ArgumentParser) -> None:
 
 
 def fetch_episodes(provider: Provider, args: ap.Namespace) -> None:
-    tracked = list(cache.fuzzy_find(args.title))
+    tracked = list(cache.find(args.title))
     if len(tracked) == 0:
         log.warning(f"No tracked series matched the title '{args.title}'. Skipping...")
         return

@@ -32,3 +32,5 @@
     - [x] Refactor 'provider' into class for better testability
         - [x] Readd-spinners
     - [x] Fix Typing and add protocol classes
+- [ ] BUG: Fetching leverage gives leverage: redemption as the first option
+    - [ ] Sort by similarity to search term

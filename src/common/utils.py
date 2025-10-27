@@ -32,7 +32,7 @@ def intersect(*funcs):
 def confirm(prompt: str, default='y') -> bool:
     global QUIET
     if QUIET:
-        return True
+        return default == "y"
 
     options = ('y', 'n')
     default = default.lower()

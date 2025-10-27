@@ -34,3 +34,4 @@
     - [x] Fix Typing and add protocol classes
 - [ ] BUG: Fetching leverage gives leverage: redemption as the first option
     - [ ] Sort by similarity to search term
+- [ ] Refactor into cache.fuzzy_find and cache.strict_find into cache.find with a default false strict mode

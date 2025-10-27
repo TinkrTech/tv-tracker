@@ -50,6 +50,7 @@ def get_args() -> argparse.Namespace:
     list_parser = make_parser(          "list",             "Lists all tracked series.")
     list_parser.add_argument("title", nargs="*", help="Only list the info for series containing this title.")
     list_parser.add_argument("-f", "--full", default=False, action="store_true", help="List the full details for each series.")
+    list_parser.add_argument("-s", "--strict", default=False, action="store_true", help="Only match titles which exactly match.")
 
     refresh.add_args(make_parser(       "refresh",          "Pulls the latest information for tracked series."))
     remove.add_args(make_parser(        "remove",           "Stop tracking one or more series."))
@@ -69,7 +70,11 @@ def _list(args: argparse.Namespace) -> None:
     tracked = cache.load()
 
     if len(args.title) > 0:
-        tracked = list(cache.fuzzy_find(args.title))
+        if args.strict:
+            tracked = list(cache.strict_find(args.title))
+        else:
+            tracked = list(cache.fuzzy_find(args.title))
+
 
     for i, series in enumerate(tracked, 1):
         print(f"{i} - {series.stub_info()}")

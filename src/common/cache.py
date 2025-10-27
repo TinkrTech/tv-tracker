@@ -47,6 +47,20 @@ def fuzzy_find(titles: str|list[str]) -> Iterator[Series]:
                 yield series
 
 
+def strict_find(titles: str|list[str]) -> Iterator[Series]:
+    global __CACHE
+    assert titles is not None
+    load()
+
+    if not isinstance(titles, list):
+        titles = [titles]
+
+    for title in titles:
+        for series in __CACHE:
+            if title.lower() == series.title.lower():
+                yield series
+
+
 def add(item: Series) -> None:
     global PATH, __CACHE
 

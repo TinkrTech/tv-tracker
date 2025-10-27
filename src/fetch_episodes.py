@@ -17,6 +17,7 @@ class Provider(Protocol):
 def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("title", help="The title of the series.")
     parser.add_argument("-s", "--season", type=int, help="The season number to fetch.")
+    parser.add_argument("--name-only", default=False, action="store_true", help="Only output the name of the series.")
 
 
 def fetch_episodes(provider: Provider, args: ap.Namespace) -> None:
@@ -55,6 +56,10 @@ def fetch_episodes(provider: Provider, args: ap.Namespace) -> None:
     # Output
     for i, season in enumerate(seasons):
         for episode in season.episodes:
-            print(f"{episode.aired}\tS{season.number:02d}E{episode.number:02d} - {episode.title}")
+            name = f"S{season.number:02d}E{episode.number:02d} - {episode.title}"
+            if args.name_only:
+                print(f"{name}")
+            else:
+                print(f"{episode.aired}\t{name}")
         if i != len(seasons) - 1:
             print()

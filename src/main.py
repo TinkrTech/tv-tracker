@@ -2,11 +2,12 @@ import os, dotenv, sys
 import logging
 import argparse
 
-import track
+import info
+import fetch_episodes
+import modify
 import refresh
 import remove
-import modify
-import fetch_episodes
+import track
 
 from common.provider import TVDBProvider
 from common import cache
@@ -52,6 +53,7 @@ def get_args() -> argparse.Namespace:
     list_parser.add_argument("-f", "--full", default=False, action="store_true", help="List the full details for each series.")
     list_parser.add_argument("-s", "--strict", default=False, action="store_true", help="Only match titles which exactly match.")
 
+    info.add_args(make_parser(          "info",             "List info for all matched series."))
     refresh.add_args(make_parser(       "refresh",          "Pulls the latest information for tracked series."))
     remove.add_args(make_parser(        "remove",           "Stop tracking one or more series."))
     track.add_args(make_parser(         "track",            "Adds a new series to the configuration to be tracked."))
@@ -81,17 +83,9 @@ def _list(args: argparse.Namespace) -> None:
 
 
 
-def init_logger(is_quiet: bool = False):
+def init_error_logger() -> None:
     logger = logging.getLogger()
     logger.setLevel(logging.NOTSET)
-
-    if not is_quiet:
-        info_handler = logging.StreamHandler(sys.stdout)
-        info_handler.setLevel(logging.INFO)
-        info_fmt = logging.Formatter("{message}", style="{")
-        info_handler.setFormatter(info_fmt)
-        info_handler.addFilter(lambda record: record.levelno <= logging.INFO)
-        logger.addHandler(info_handler)
 
     warning_handler = logging.StreamHandler(sys.stderr)
     warning_handler.setLevel(logging.WARNING)
@@ -99,13 +93,23 @@ def init_logger(is_quiet: bool = False):
     warning_handler.setFormatter(warning_formatter)
     logger.addHandler(warning_handler)
 
-    return logger
+
+def init_verbose_logger() -> None:
+    logger = logging.getLogger()
+    info_handler = logging.StreamHandler(sys.stdout)
+    info_handler.setLevel(logging.INFO)
+    info_fmt = logging.Formatter("{message}", style="{")
+    info_handler.setFormatter(info_fmt)
+    info_handler.addFilter(lambda record: record.levelno <= logging.INFO)
+    logger.addHandler(info_handler)
 
 
 def main():
+    init_error_logger()
     args = get_args()
     dotenv.load_dotenv()
-    init_logger(is_quiet=args.quiet)
+    if not args.quiet:
+        init_verbose_logger()
 
     cache.PATH = args.cache_path
     utils.USE_ANIMATIONS = not args.no_animations
@@ -114,6 +118,8 @@ def main():
     make_provider = utils.with_spinner(TVDBProvider, "Fetching session token")
 
     match args.command:
+        case "info":
+            info.info(args)
         case "list":
             _list(args)
         case "remove":

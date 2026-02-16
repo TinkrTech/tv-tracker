@@ -15,7 +15,9 @@
     - [x] Add selection for Season Type
 - [x] Create 'list'
     - [x] Add optional series flag to get full info for one item
-    - [-] Or "info" command
+    - [x] Or "info" command
+    - [ ] remove --full option
+    - [ ] Add toml option to info
 - [x] Remove seasons with no episodes from season count
 - [x] Add multi-language support
     - [x] use translations to index if the requested language is different from series language

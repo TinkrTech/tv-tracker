@@ -133,12 +133,8 @@ def with_spinner[T](func: Callable[..., T], message: str = "") -> Callable[..., 
         print(message)
         return func(*args, **kwargs)
 
-    @wraps(func)
-    def without_output(*args, **kwargs) -> T:
-        return func(*args, **kwargs)
-
     if QUIET:
-        return without_output
+        return func
     elif USE_ANIMATIONS:
         return with_spinner
     else:

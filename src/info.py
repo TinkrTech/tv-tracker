@@ -46,7 +46,9 @@ def output_as_csv(fields: list[str], all_series: list[Series], delimeter=",", wi
 def output_as_toml(fields: list[str], all_series: list[Series]) -> None:
     from datetime import date
 
-    for series in all_series:
+    for i, series in enumerate(all_series):
+        if i != 0:
+            print()
         print(f"['{series.stub_info()}']")
         series = as_view(fields, series)
         for field in fields:
@@ -58,7 +60,6 @@ def output_as_toml(fields: list[str], all_series: list[Series]) -> None:
             else:
                 formatted = repr(value)
             print(f"{field} = {formatted}")
-        print()
 
 
 def info(args: ap.Namespace) -> None:

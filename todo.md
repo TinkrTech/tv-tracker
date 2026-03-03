@@ -1,13 +1,8 @@
-- [x] Create 'list'
-    - [x] Add optional series flag to get full info for one item
-    - [x] Or "info" command
-    - [x] remove --full option
-    - [x] Add toml option to info
-- [ ] Info: Allow format strings?
+- [ ] Info
+    - [ ] Allow format strings?
+    - [ ] Allow for querying?
+        - [ ] Might be prudent to refactor cache into a sqlite database for easier querying
 - [-] Rework cache configuration i.e. use_order and use_language into a sub-object
     - [ ] Is this even worth the effort?
-- [x] Add 'fetch-episodes'
-    - [-] Extract "search" from track so it can be used here?
-    - [ ] Refactor how seasons in an order are stored in the model
 - [ ] BUG: Fetching leverage gives leverage: redemption as the first option
     - [ ] Sort by similarity to search term

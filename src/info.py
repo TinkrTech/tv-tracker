@@ -22,11 +22,9 @@ def validate_field_name(value: str):
 
 def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("title", nargs='+', help="The name of the tracked show(s) to match.")
-
-    parser.add_argument("-f", "--fields", nargs="*", type=validate_field_name, help="The fields to return. Returns all if not specified")
-
-    parser.add_argument("--format", choices=("csv", "tsv", "toml"), default="tsv", help="The format of the results.")
-    parser.add_argument("--with-headers", action="store_true", help="Output the result with headers.")
+    parser.add_argument("-F", "--fields", nargs="*", type=validate_field_name, help="The fields to return. Returns all if not specified")
+    parser.add_argument("-f", "--format", choices=("tsv", "csv", "toml"), default="tsv", help="The format of the results.")
+    parser.add_argument("-w", "--with-headers", action="store_true", help="Output the result with headers.")
     parser.add_argument("-s", "--strict", default=False, action="store_true", help="Only match titles which exactly match.")
 
 

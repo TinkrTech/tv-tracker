@@ -8,7 +8,8 @@ from common import cache
 from common.model import Series
 
 
-SERIES_FIELDS = tuple(field.name for field in dataclasses.fields(Series))
+SERIES_FIELDS = tuple(field.name for field in dataclasses.fields(Series)
+                      if field.name not in ["seasons"])
 
 
 def validate_field_name(value: str):
@@ -24,7 +25,7 @@ def add_args(parser: ap.ArgumentParser) -> None:
 
     parser.add_argument("-f", "--fields", nargs="*", type=validate_field_name, help="The fields to return. Returns all if not specified")
 
-    parser.add_argument("--format", choices=("csv", "tsv"), default="tsv", help="The format of the results.")
+    parser.add_argument("--format", choices=("csv", "tsv", "toml"), default="tsv", help="The format of the results.")
     parser.add_argument("--with-headers", action="store_true", help="Output the result with headers.")
     parser.add_argument("-s", "--strict", default=False, action="store_true", help="Only match titles which exactly match.")
 
@@ -44,6 +45,24 @@ def output_as_csv(fields: list[str], all_series: list[Series], delimeter=",", wi
         writer.writerow(as_view(fields, series))
 
 
+def output_as_toml(fields: list[str], all_series: list[Series]) -> None:
+    from datetime import date
+
+    for series in all_series:
+        print(f"['{series.stub_info()}']")
+        series = as_view(fields, series)
+        for field in fields:
+            value = series[field]
+            if isinstance(value, date):
+                formatted = f'"{value}"'
+            elif isinstance(value, bool):
+                formatted = f'{str(value).lower()}'
+            else:
+                formatted = repr(value)
+            print(f"{field} = {formatted}")
+        print()
+
+
 def info(args: ap.Namespace) -> None:
     cache.load()
     tracked = list(cache.find(args.title, strict=args.strict))
@@ -54,3 +73,5 @@ def info(args: ap.Namespace) -> None:
         output_csvlike(delimeter=",")
     elif args.format == "tsv":
         output_csvlike(delimeter="\t")
+    elif args.format == "toml":
+        output_as_toml(fields, tracked)

@@ -46,10 +46,15 @@ def find(titles: str|list[str], *, strict=False) -> Iterator[Series]:
     else:
         matches = lambda x, y: x in y
 
+    results = []
     for title in titles:
         for series in __CACHE:
             if matches(title.lower(), series.title.lower()):
-                yield series
+                results.append(series)
+
+    results_by_length = sorted(results, key=lambda item: len(item.title))
+    for result in results_by_length:
+        yield result
 
 
 def add(item: Series) -> None:

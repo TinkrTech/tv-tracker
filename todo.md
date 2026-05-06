@@ -1,9 +1,10 @@
+- [ ] FEAT: Refactor cache into sqlite db
+    - [x] Generate CREATE TABLE from dataclass
+    - [ ] auto-detect upgrades and have auto-migration
+    - [x] use ORM?
+        - [x] SqlModel
 - [ ] Info
     - [ ] Allow format strings?
     - [ ] Allow for querying?
-        - [ ] Might be prudent to refactor cache into a sqlite database for easier querying
-- [-] Rework cache configuration i.e. use_order and use_language into a sub-object
-    - [-] Is this even worth the effort?
-- [x] BUG: Fetching leverage gives leverage: redemption as the first option
-    - [-] Sort by similarity to search term
-    - [x] Sort by size.
+- [ ] Cache db
+    - add a settings.json

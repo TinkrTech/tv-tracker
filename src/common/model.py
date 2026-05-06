@@ -1,39 +1,40 @@
 from datetime import date
 import textwrap
+from sqlmodel import SQLModel, Field
 
-from dataclasses import dataclass, field
-import dataclasses
-
-from typing import Optional
+from typing import Optional, List
 
 
-@dataclass(slots=True, frozen=True)
-class Episode:
-    tvdb_id: int
+class Episode(SQLModel, table=True):
+    tvdb_id: int = Field(primary_key=True)
     title: str
     number: int
     aired: Optional[date]
 
+    season_id: int = Field(foreign_key="season.tvdb_id")
 
-@dataclass(slots=True, frozen=True)
-class Season:
-    tvdb_id: int
+
+class Season(SQLModel, table=True):
+    tvdb_id: int = Field(primary_key=True)
     number: int
-    order: str
-    episodes: list[Episode] = field(default_factory=list)
+    order_id: int = Field(foreign_key="orders.order_id")
+    series_id: int = Field(foreign_key="series.tvdb_id")
 
 
-@dataclass(slots=True, frozen=True)
-class Series:
-    tvdb_id: int
+class Orders(SQLModel, table=True):
+    order_id: int = Field(default=None, primary_key=True)
+    name: str
+
+
+class Series(SQLModel, table=True):
+    tvdb_id: int = Field(primary_key=True)
     title: str
     year: str
     last_aired: date
     retrieved: date
     keep_updated: bool
     use_order: str
-    orders: list[str]
-    seasons: list[Season] = field(default_factory=list)
+
     use_language: Optional[str] = None
     season_count: Optional[int] = None
 
@@ -77,7 +78,7 @@ class Series:
         else:
             return self.season_count
 
-    def using(self, **kwargs) -> 'Series':
-        fields = dataclasses.asdict(self)
-        fields.update(kwargs)
-        return Series(**fields)
+    # def using(self, **kwargs) -> 'Series':
+    #     fields = dataclasses.asdict(self)
+    #     fields.update(kwargs)
+    #     return Series(**fields)

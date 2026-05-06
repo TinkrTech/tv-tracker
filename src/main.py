@@ -1,6 +1,7 @@
 import os, dotenv, sys
 import logging
 import argparse
+from pathlib import Path
 
 import info
 import fetch_episodes
@@ -19,9 +20,11 @@ def get_args() -> argparse.Namespace:
     defaults = argparse.ArgumentParser(add_help=False)
     defaults.add_argument(
         "-c", "--cache-path",
-        default="data/cache.toml",
-        help="The location of config.toml"
+        default=Path("data/cache.db"),
+        type=Path,
+        help="The location of the cache database"
     )
+
     defaults.add_argument(
         "-A", "--no-animations",
         default=False,
@@ -66,10 +69,12 @@ def get_args() -> argparse.Namespace:
 
 
 def _list(args: argparse.Namespace) -> None:
-    tracked = cache.load()
+    from sqlmodel import select
 
     if len(args.title) > 0:
-        tracked = list(cache.find(args.title, strict=args.strict))
+        tracked = cache.find(args.title, strict=args.strict)
+    else:
+        tracked = cache._result_of(select(model.Series))
 
     for i, series in enumerate(tracked, 1):
         print(f"{i} - {series.stub_info()}")
@@ -97,6 +102,32 @@ def init_verbose_logger() -> None:
     logger.addHandler(info_handler)
 
 
+def initialize_cache(args: argparse.Namespace):
+    args.cache_path: Path = args.cache_path
+    old_cache = None
+    old_default_cache = Path("data/cache.toml")
+
+    if args.cache_path.suffix == 'toml':
+        old_cache = args.cache_path
+        args.cache_path = args.cache_path.with_suffix('db')
+    elif not args.cache_path.exists() and old_default_cache.exists():
+        old_cache = old_default_cache
+
+    cache.initialize(args.cache_path)
+
+    if old_cache is not None and old_cache.exists():
+        logging.info(f"The cache '{old_cache}' will be upgraded to sqlite.")
+        logging.info(f"New data will be saved to '{args.cache_path}'")
+        try:
+            cache.migrate_toml(old_cache)
+        except Exception as e:
+            args.cache_path.unlink()
+            raise e
+    elif old_cache is not None:
+        logging.info(f"Cache file '{old_cache}' was not found. A new cache will be started.")
+    else:
+        logging.debug(f"No existing cache.")
+
 def main():
     init_error_logger()
     args = get_args()
@@ -104,7 +135,8 @@ def main():
     if not args.quiet:
         init_verbose_logger()
 
-    cache.PATH = args.cache_path
+    initialize_cache(args)
+
     utils.USE_ANIMATIONS = not args.no_animations
     utils.QUIET = args.quiet
 

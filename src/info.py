@@ -8,11 +8,9 @@ from common import cache
 from common.model import Series
 
 
-SERIES_FIELDS = tuple(field.name for field in dataclasses.fields(Series)
-                      if field.name not in ["seasons"])
-
-
 def validate_field_name(value: str):
+    SERIES_FIELDS = tuple(field.name for field in dataclasses.fields(Series)
+                      if field.name not in ["seasons"])
     if value.lower() not in SERIES_FIELDS:
         msg = f"field must be one of {SERIES_FIELDS} not '{value}'\n"
         log.error(msg)

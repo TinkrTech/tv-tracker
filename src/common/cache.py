@@ -35,18 +35,34 @@ def initialize(path: Path) -> None:
     SQLModel.metadata.create_all(__ENGINE)
     log.debug(f"Loaded engine from '{uri}'")
 
-PATH: str = ''
-__CACHE: list[Series] = []
-__LOADED = False
 
+def migrate_toml(old: Path) -> None:
+    import tomllib
+    from datetime import date
+    assert old.exists()
+    assert old.suffix == ".toml"
+    assert __ENGINE != None
 
-def load() -> list[Series]:
-    global PATH, __CACHE, __LOADED
-    assert PATH != ''
-
-    if not __LOADED:
-        with open(PATH, 'rb') as cfg:
+    def load_old() -> list[Series]:
+        with open(old, 'rb') as cfg:
             entries = tomllib.load(cfg)
+        for key, value in entries.items():
+            entries[key]["last_aired"] = date.fromisoformat(value["last_aired"])
+            entries[key]["retrieved"] = date.fromisoformat(value["retrieved"])
+        return [Series(**entry) for entry in entries.values()]
+
+    items = load_old()
+    print(repr(items[0].last_aired))
+    log.debug(f"Loaded {len(items)} items")
+
+    with sqlmodel.Session(__ENGINE) as session:
+        session.add_all(items)
+        session.commit()
+        statement = select(Series)
+        count_added = len(session.exec(statement).all())
+
+    log.debug(f"Added {count_added} items")
+
 
 def add(item: Series) -> None:
     global __ENGINE

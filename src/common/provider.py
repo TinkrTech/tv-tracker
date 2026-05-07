@@ -155,8 +155,6 @@ class TVDBProvider:
             last_aired = date.fromisoformat(raw["lastAired"]),
             retrieved = date.today(),
             keep_updated=keep_updated,
-            orders=orders,
             use_order=use_order,
-            seasons=seasons,
             use_language=use_language,
         )

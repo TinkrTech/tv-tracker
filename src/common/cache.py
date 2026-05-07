@@ -3,7 +3,7 @@ from pathlib import Path
 
 from collections.abc import Iterable, Iterator
 
-from sqlmodel import SQLModel, Field, select, or_, and_
+from sqlmodel import SQLModel, Field, select, delete as delete_, or_, func
 import sqlmodel
 
 from common.model import Series
@@ -92,16 +92,19 @@ def find(titles: str|list[str], *, strict=False) -> Iterator[Series]:
     titles = map(lambda x: x.lower(), titles)
 
     if strict:
-        titles_match = Series.title.lower().in_(titles)
+        titles_match = func.lower(Series.title).in_(titles)
     else:
         titles_match = or_(
-            *(title in Series.title.lower() for title in titles)
+            *(
+                func.lower(Series.title).like(f"%{title}%")
+                for title in titles
+            )
         )
 
     results = _result_of(
         select(Series)\
         .where(titles_match)\
-        .order_by(len(Series.title))
+        .order_by(func.char_length(Series.title))
     )
 
     for result in results:
@@ -120,4 +123,15 @@ def update(updated: Iterable[Series]) -> None:
             Series,
             (series.model_dump(exclude_unset=True) for series in updated)
         )
+        session.commit()
+
+
+type SeriesId = type(Series.tvdb_id)
+def delete(deleted: Iterable[SeriesId]) -> None:
+    global __ENGINE
+
+    with sqlmodel.Session(__ENGINE) as session:
+        deletions = delete_(Series)\
+            .where(Series.tvdb_id.in_(deleted))
+        session.exec(deletions)
         session.commit()

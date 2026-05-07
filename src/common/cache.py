@@ -4,7 +4,6 @@ from pathlib import Path
 from collections.abc import Iterable, Iterator
 
 from sqlmodel import SQLModel, Field, select, or_, and_
-
 import sqlmodel
 
 from common.model import Series
@@ -107,6 +106,10 @@ def find(titles: str|list[str], *, strict=False) -> Iterator[Series]:
 
     for result in results:
         yield result
+
+
+def list_all() -> list[Series]:
+    return _result_of(select(Series))
 
 
 def update(updated: Iterable[Series]) -> None:

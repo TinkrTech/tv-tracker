@@ -69,16 +69,13 @@ def get_args() -> argparse.Namespace:
 
 
 def _list(args: argparse.Namespace) -> None:
-    from sqlmodel import select
-
     if len(args.title) > 0:
         tracked = cache.find(args.title, strict=args.strict)
     else:
-        tracked = cache._result_of(select(model.Series))
+        tracked = cache.list_all()
 
     for i, series in enumerate(tracked, 1):
         print(f"{i} - {series.stub_info()}")
-
 
 
 def init_error_logger() -> None:

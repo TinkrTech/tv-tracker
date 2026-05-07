@@ -1,8 +1,11 @@
 - [ ] FEAT: Refactor cache into sqlite db
     - [x] Generate CREATE TABLE from dataclass
-    - [ ] auto-detect upgrades and have auto-migration
+    - [x] auto-detect upgrades and have auto-migration
     - [x] use ORM?
         - [x] SqlModel
+    - [ ] Add orders to database
+    - [ ] Add query for all orders in a series
+    - [ ] Store Seasons and Episodes
 - [ ] Info
     - [ ] Allow format strings?
     - [ ] Allow for querying?

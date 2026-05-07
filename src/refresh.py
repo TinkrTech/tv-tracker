@@ -34,7 +34,7 @@ def fetch_series(provider: Provider, tracked: Series, force: bool = False) -> Se
 async def _refresh(provider: Provider, args: ap.Namespace):
     bound_fetch = lambda tracked: fetch_series(provider, tracked, args.force)
 
-    all_series = cache.load()
+    all_series = cache.list_all()
     updated: list[Series] = await asyncio.gather(*[bound_fetch(series) for series in all_series])
     cache.update(updated)
 

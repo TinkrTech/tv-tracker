@@ -54,6 +54,11 @@ def track(provider: Provider, args: ap.Namespace):
     else:
         to_add = utils.select(f"Select one of the following:\n   * = already tracked", matches)
 
+    if cache.has(to_track.tvdb_id):
+        log.warn(f"'{to_track.stub_info()}' is already being tracked. Skipping...")
+        return
+
     _get_series_info = utils.with_spinner(provider.get_series_info, "Fetching full series info")
     to_track = _get_series_info(series_id=to_add.tvdb_id, use_language=args.translate)
+
     cache.add(to_track)

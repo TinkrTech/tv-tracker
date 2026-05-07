@@ -67,10 +67,6 @@ def add(item: Series) -> None:
     global __ENGINE
 
     with sqlmodel.Session(__ENGINE) as session:
-        if has(item.tvdb_id):
-            log.warn(f"'{item.stub_info()}' is already being tracked. Skipping...")
-            return
-
         session.add(item)
         session.commit()
 

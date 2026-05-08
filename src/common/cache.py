@@ -3,13 +3,14 @@ from pathlib import Path
 
 from collections.abc import Iterable, Iterator
 
-from sqlmodel import SQLModel, Field, select, delete as delete_, or_, func
+from sqlmodel import SQLModel, select, delete as delete_, or_, func
 import sqlmodel
 
-from common.model import Series
+from common.model import Series, Season
 
 
 __ENGINE = None
+type SeriesId = type(Series.tvdb_id)
 
 
 def _result_of(statement):
@@ -63,11 +64,11 @@ def migrate_toml(old: Path) -> None:
     log.debug(f"Added {count_added} items")
 
 
-def add(item: Series) -> None:
+def add(items: Iterable[SQLModel]) -> None:
     global __ENGINE
 
     with sqlmodel.Session(__ENGINE) as session:
-        session.add(item)
+        session.add_all(items)
         session.commit()
 
 
@@ -107,22 +108,31 @@ def find(titles: str|list[str], *, strict=False) -> Iterator[Series]:
         yield result
 
 
-def list_all() -> list[Series]:
-    return _result_of(select(Series))
+def series_orders(series_id: SeriesId):
+    query = select(Season.order, func.count(Season.order))\
+        .where(Season.series_id == series_id)\
+        .group_by(Season.order)\
+        .order_by(Season.order)
+    return _result_of(query)
 
 
-def update(updated: Iterable[Series]) -> None:
+def list_all[T](t: T = Series) -> list[T]:
+    return _result_of(select(t))
+
+
+def update(updated: Iterable) -> None:
     global __ENGINE
+
+    updated = list(updated)
 
     with sqlmodel.Session(__ENGINE) as session:
         session.bulk_update_mappings(
-            Series,
+            type(updated[0]),
             (series.model_dump(exclude_unset=True) for series in updated)
         )
         session.commit()
 
 
-type SeriesId = type(Series.tvdb_id)
 def delete(deleted: Iterable[SeriesId]) -> None:
     global __ENGINE
 

@@ -3,9 +3,12 @@
     - [x] auto-detect upgrades and have auto-migration
     - [x] use ORM?
         - [x] SqlModel
-    - [ ] Add orders to database
+    - [x] Add orders to database
     - [ ] Add query for all orders in a series
-    - [ ] Store Seasons and Episodes
+    - [x] Store Seasons and Episodes
+    - [ ] Migration from TOML to sqlite
+        - [x] reset the order
+        - [ ] Fix import
 - [ ] Info
     - [ ] Allow format strings?
     - [ ] Allow for querying?

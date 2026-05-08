@@ -6,14 +6,14 @@ from typing import Protocol
 from common.provider import SearchResult
 from common import utils
 from common import cache
-from common.model import Series
+from common.model import SeriesConfig, AllSeriesData
 
 # This class is used for Duck-Typing; if it walks like a duck and quacks like a duck, it's a duck
 class Provider(Protocol):
     def search(self, query: dict|None, translate: str) -> list[SearchResult]:
         ...
 
-    def get_series_info(self, series_id: int, use_language: str|None, use_order: str|None) -> Series:
+    def get_all(self, series_id: int, config: SeriesConfig) -> AllSeriesData:
         ...
 
 
@@ -54,11 +54,20 @@ def track(provider: Provider, args: ap.Namespace):
     else:
         to_add = utils.select(f"Select one of the following:\n   * = already tracked", matches)
 
-    if cache.has(to_track.tvdb_id):
-        log.warn(f"'{to_track.stub_info()}' is already being tracked. Skipping...")
+    if cache.has(to_add.tvdb_id):
+        log.warn(f"'{to_add.stub_info()}' is already being tracked. Skipping...")
         return
 
-    _get_series_info = utils.with_spinner(provider.get_series_info, "Fetching full series info")
-    to_track = _get_series_info(series_id=to_add.tvdb_id, use_language=args.translate)
+    config = SeriesConfig(
+        series_id=to_add.tvdb_id,
+        order="default",
+        language=args.translate,
+    )
+    _get_full_info = utils.with_spinner(provider.get_all, "Fetching full series info")
+    all_data = _get_full_info(config=config)
 
-    cache.add(to_track)
+    cache.add([config])
+    cache.add([all_data.series])
+    cache.add(all_data.seasons)
+    cache.add(all_data.episodes)
+    cache.add(all_data.season_episodes)

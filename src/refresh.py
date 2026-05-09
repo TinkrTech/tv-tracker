@@ -2,14 +2,15 @@ import argparse as ap
 import asyncio
 from typing import Protocol
 
-from common.model import Series
+from sqlmodel import select
+from common.model import Series, SeriesConfig
+from common.provider import AllSeriesData
 from common import cache
 from common import utils
 
-
 # This class is used for Duck-Typing; if it walks like a duck and quacks like a duck, it's a duck
 class Provider(Protocol):
-    def get_series_info(self, series_id: int, use_language: str|None, use_order: str|None) -> Series:
+    def get_all(self, config: SeriesConfig) -> AllSeriesData:
         ...
 
 
@@ -18,25 +19,23 @@ def add_args(parser: ap.ArgumentParser):
 
 
 @utils.as_async
-def fetch_series(provider: Provider, tracked: Series, force: bool = False) -> Series:
-    if not tracked.keep_updated and not force:
-        return tracked
-
-    fetched = provider.get_series_info(
-        tracked.tvdb_id,
-        use_language=tracked.use_language,
-        use_order=tracked.use_order
-    )
-
-    return fetched
+def fetch_series(provider: Provider, config: SeriesConfig) -> AllSeriesData:
+    return provider.get_all(config)
 
 
 async def _refresh(provider: Provider, args: ap.Namespace):
-    bound_fetch = lambda tracked: fetch_series(provider, tracked, args.force)
+    if args.force:
+        configs = cache.list_all(SeriesConfig)
+    else:
+        query = select(SeriesConfig)\
+            .join(Series, SeriesConfig.series_id == Series.tvdb_id)\
+            .where(Series.keep_updated == True)
+        configs = cache._result_of(query)
 
-    all_series = cache.list_all()
-    updated: list[Series] = await asyncio.gather(*[bound_fetch(series) for series in all_series])
-    cache.update(updated)
+    updated: list[AllSeriesData] = await asyncio.gather(*[fetch_series(provider, config) for config in configs])
+
+    for series_data in updated:
+        cache.update(series_data.flatten())
 
 
 def refresh(provider: Provider, args: ap.Namespace):

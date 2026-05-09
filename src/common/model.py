@@ -1,16 +1,8 @@
 from datetime import date
 import textwrap
 from sqlmodel import SQLModel, Field
-from typing import Optional
+from typing import Optional, Generator
 from dataclasses import dataclass
-
-
-@dataclass
-class AllSeriesData:
-    series: Series
-    seasons: list[Season]
-    episodes: list[Episode]
-    season_episodes: list[SeasonEpisode]
 
 
 class Episode(SQLModel, table=True):
@@ -67,3 +59,26 @@ class SeriesConfig(SQLModel, table=True):
     series_id: int = Field(foreign_key="series.tvdb_id", primary_key=True)
     order: str = Field(default="official")
     language: str = Field(default="eng", min_length=3, max_length=3, nullable=True)
+
+
+@dataclass(slots=True)
+class AllSeriesData:
+    series: Series
+    config: SeriesConfig
+    seasons: list[Season]
+    episodes: list[Episode]
+    season_episodes: list[SeasonEpisode]
+
+    def __iter__(self):
+        for value in self.__slots__:
+            yield getattr(self, value)
+
+    def flatten(self) -> Generator[SQLModel, None, None]:
+        for key in self.__slots__:
+            value = getattr(self, key)
+            if not isinstance(value, list):
+                yield value
+                continue
+
+            for item in value:
+                yield item

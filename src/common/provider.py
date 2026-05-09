@@ -208,6 +208,7 @@ class TVDBProvider:
 
         return AllSeriesData(
             series=series,
+            config=config,
             seasons=seasons,
             episodes=episodes,
             season_episodes=season_episodes,

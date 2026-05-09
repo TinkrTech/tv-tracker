@@ -6,7 +6,7 @@ from collections.abc import Iterable, Iterator
 from sqlmodel import SQLModel, select, delete as delete_, or_, func
 import sqlmodel
 
-from common.model import Series, Season
+from common.model import Series, Season, AllSeriesData
 
 
 __ENGINE = None
@@ -52,7 +52,6 @@ def migrate_toml(old: Path) -> None:
         return [Series(**entry) for entry in entries.values()]
 
     items = load_old()
-    print(repr(items[0].last_aired))
     log.debug(f"Loaded {len(items)} items")
 
     with sqlmodel.Session(__ENGINE) as session:
@@ -120,16 +119,16 @@ def list_all[T](t: T = Series) -> list[T]:
     return _result_of(select(t))
 
 
-def update(updated: Iterable) -> None:
+def update(items: SQLModel|Iterable[SQLModel]) -> None:
+    from typing import reveal_type
     global __ENGINE
 
-    updated = list(updated)
+    if isinstance(items, SQLModel):
+        items = [items]
 
     with sqlmodel.Session(__ENGINE) as session:
-        session.bulk_update_mappings(
-            type(updated[0]),
-            (series.model_dump(exclude_unset=True) for series in updated)
-        )
+        for item in items:
+            session.merge(item)
         session.commit()
 
 

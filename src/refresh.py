@@ -3,6 +3,7 @@ import asyncio
 from typing import Protocol
 
 from sqlmodel import select
+from sqlalchemy.orm import selectinload
 from common.model import Series, SeriesConfig
 from common.provider import AllSeriesData
 from common import cache
@@ -24,14 +25,17 @@ def fetch_series(provider: Provider, config: SeriesConfig) -> AllSeriesData:
 
 
 async def _refresh(provider: Provider, args: ap.Namespace):
-    if args.force:
-        configs = cache.list_all(SeriesConfig)
-    else:
-        query = select(SeriesConfig)\
-            .join(Series, SeriesConfig.series_id == Series.tvdb_id)\
-            .where(Series.keep_updated == True)
-        configs = cache._result_of(query)
+    cache.fix_configs()
+    where=True
+    if not args.force:
+        where = Series.keep_updated == True
 
+    query = select(Series)\
+        .where(where)\
+        .options(selectinload(Series.config))
+    all_series = cache._result_of(query)
+
+    configs = [series.config for series in all_series]
     updated: list[AllSeriesData] = await asyncio.gather(*[fetch_series(provider, config) for config in configs])
 
     for series_data in updated:

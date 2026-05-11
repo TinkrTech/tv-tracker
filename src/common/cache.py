@@ -6,7 +6,7 @@ from collections.abc import Iterable, Iterator
 from sqlmodel import SQLModel, select, delete as delete_, or_, and_, func
 import sqlmodel
 
-from common.model import Series, Season, Episode, SeasonEpisode, AllSeriesData
+from common.model import Series, Season, Episode, SeasonEpisode, AllSeriesData, SeriesConfig
 
 
 __ENGINE = None
@@ -109,6 +109,19 @@ def series_orders(series_id: SeriesId):
 
 def list_all[T](t: T = Series) -> list[T]:
     return _result_of(select(t))
+
+
+def fix_configs() -> None:
+    global __ENGINE
+
+    with sqlmodel.Session(__ENGINE) as session:
+        all_series = session.exec(select(Series)).all()
+
+        for series in all_series:
+            if not series.config:
+                config = SeriesConfig(series_id=series.tvdb_id, series=series)
+                session.add(config)
+        session.commit()
 
 
 def list_episodes(series_id: SeriesId, season_number: int|None=None):

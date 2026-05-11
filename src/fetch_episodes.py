@@ -2,15 +2,15 @@ import argparse as ap
 from typing import Protocol
 import logging as log
 
-
+from common.provider import EpisodeResult
 from common import utils
 from common import cache
-from common.model import Series, Episode
+from common.model import Series, SeriesConfig, Episode
 
 
 # This class is used for Duck-Typing; if it walks like a duck and quacks like a duck, it's a duck
 class Provider(Protocol):
-    def get_series_info(self, series_id: int, use_language: str|None, use_order: str|None) -> Series:
+    def get_episodes(self, config: SeriesConfig) -> list[EpisodeResult]:
         ...
 
 
@@ -35,18 +35,8 @@ def fetch_episodes(provider: Provider, args: ap.Namespace) -> None:
         log.warning(f"{selection.title} has no season {args.season}. Skipping...")
         return
 
-    _get_series_info = utils.with_spinner(provider.get_series_info, "Fetching full series info")
-    series_info: Series = _get_series_info(selection.tvdb_id, use_order=selection.use_order, use_language=selection.use_language)
-
-    # filter seasons
-    seasons = [
-        season for season in series_info.seasons
-        if season.order == selection.use_order
-            and season.number != 0
-            and len(season.episodes) > 0
-    ]
-    if args.season is not None:
-        seasons = [season for season in seasons if season.number == args.season]
+    # Not filtering 0 length seasons...
+    seasons = cache.list_episodes(selection.tvdb_id, season_number=args.season)
 
     if len(seasons) == 0:
         season_number = "seasons" if args.season is None else f"season {args.season}"

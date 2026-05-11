@@ -3,10 +3,10 @@ from pathlib import Path
 
 from collections.abc import Iterable, Iterator
 
-from sqlmodel import SQLModel, select, delete as delete_, or_, func
+from sqlmodel import SQLModel, select, delete as delete_, or_, and_, func
 import sqlmodel
 
-from common.model import Series, Season, AllSeriesData
+from common.model import Series, Season, Episode, SeasonEpisode, AllSeriesData
 
 
 __ENGINE = None
@@ -63,14 +63,6 @@ def migrate_toml(old: Path) -> None:
     log.debug(f"Added {count_added} items")
 
 
-def add(items: Iterable[SQLModel]) -> None:
-    global __ENGINE
-
-    with sqlmodel.Session(__ENGINE) as session:
-        session.add_all(items)
-        session.commit()
-
-
 def has(tvdb_id: int) -> bool:
     all_matching = select(Series)\
         .where(Series.tvdb_id == tvdb_id)
@@ -117,6 +109,30 @@ def series_orders(series_id: SeriesId):
 
 def list_all[T](t: T = Series) -> list[T]:
     return _result_of(select(t))
+
+
+def list_episodes(series_id: SeriesId, season_number: int|None=None):
+    where = Season.series_id == series_id
+    if season_number is not None:
+        where = and_(where, Season.number == season_number)
+    else:
+        where = and_(where, Season.number != 0)
+
+    query = select(Episode, Season.number, SeasonEpisode.number)\
+        .join(SeasonEpisode, SeasonEpisode.episode_id == Episode.tvdb_id)\
+        .join(Season, Season.tvdb_id == SeasonEpisode.season_id)\
+        .where(where)\
+        .order_by(Season.number, SeasonEpisode.number)
+
+    return _result_of(query)
+
+
+def add(items: Iterable[SQLModel]) -> None:
+    global __ENGINE
+
+    with sqlmodel.Session(__ENGINE) as session:
+        session.add_all(items)
+        session.commit()
 
 
 def update(items: SQLModel|Iterable[SQLModel]) -> None:

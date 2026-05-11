@@ -159,10 +159,7 @@ def main():
                 args
             )
         case "fetch-episodes":
-            fetch_episodes.fetch_episodes(
-                make_provider(os.getenv('TVDB_KEY')),
-                args
-            )
+            fetch_episodes.fetch_episodes(args)
 
 
 

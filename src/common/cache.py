@@ -5,6 +5,7 @@ from collections.abc import Iterable, Iterator
 
 from sqlmodel import SQLModel, select, delete as delete_, or_, and_, func
 import sqlmodel
+from sqlalchemy.orm import selectinload
 
 from common.model import Series, Season, Episode, SeasonEpisode, AllSeriesData, SeriesConfig
 
@@ -69,9 +70,8 @@ def has(tvdb_id: int) -> bool:
     return len(_result_of(all_matching)) != 0
 
 
-def find(titles: str|list[str], *, strict=False) -> Iterator[Series]:
+def find(titles: str|list[str], *, strict:bool=False, query_options=None) -> list[Series]:
     global __ENGINE
-
     assert titles is not None
 
     if not isinstance(titles, list):
@@ -89,15 +89,17 @@ def find(titles: str|list[str], *, strict=False) -> Iterator[Series]:
             )
         )
 
+    if query_options is None:
+        query_options = []
+
     results = _result_of(
         select(Series)\
         .where(titles_match)\
         .order_by(func.char_length(Series.title))
+        .options(*query_options)
     )
 
-    for result in results:
-        yield result
-
+    return results
 
 def series_orders(series_id: SeriesId):
     query = select(Season.order, func.count(Season.order))\
@@ -124,18 +126,20 @@ def fix_configs() -> None:
         session.commit()
 
 
-def list_episodes(series_id: SeriesId, season_number: int|None=None):
-    where = Season.series_id == series_id
+def list_seasons(series_id: SeriesId, *, order: str, season_number: int|None=None) -> list[Season]:
+    where = and_(Season.series_id == series_id, Season.order == order)
     if season_number is not None:
         where = and_(where, Season.number == season_number)
     else:
         where = and_(where, Season.number != 0)
 
-    query = select(Episode, Season.number, SeasonEpisode.number)\
-        .join(SeasonEpisode, SeasonEpisode.episode_id == Episode.tvdb_id)\
-        .join(Season, Season.tvdb_id == SeasonEpisode.season_id)\
+    query = select(Season)\
         .where(where)\
-        .order_by(Season.number, SeasonEpisode.number)
+        .order_by(Season.number)\
+        .options(
+            selectinload(Season.season_episodes)\
+            .selectinload(SeasonEpisode.episode)
+        )
 
     return _result_of(query)
 

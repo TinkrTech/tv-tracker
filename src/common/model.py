@@ -1,8 +1,18 @@
 from datetime import date
 import textwrap
-from sqlmodel import SQLModel, Field
-from typing import Optional, Generator
+from sqlmodel import SQLModel, Field, Relationship
+from typing import Any, Optional, Generator
 from dataclasses import dataclass
+
+
+# Episodes are many-to-many
+class SeasonEpisode(SQLModel, table=True):
+    season_id: int = Field(primary_key=True, foreign_key="season.tvdb_id")
+    episode_id: int = Field(primary_key=True, foreign_key="episode.tvdb_id")
+    number: int
+
+    season: 'Season' = Relationship(back_populates="season_episodes")
+    episode: 'Episode' = Relationship(back_populates="season_episodes")
 
 
 class Episode(SQLModel, table=True):
@@ -11,13 +21,12 @@ class Episode(SQLModel, table=True):
     overview: Optional[str]
     aired: Optional[date]
 
-
-# Episodes are many-to-many
-class SeasonEpisode(SQLModel, table=True):
-    season_id: int = Field(primary_key=True, foreign_key="season.tvdb_id")
-    episode_id: int = Field(primary_key=True, foreign_key="episode.tvdb_id")
-
-    number: int
+    season_episodes: list[SeasonEpisode] = Relationship(
+        back_populates="episode",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+        },
+    )
 
 
 class Season(SQLModel, table=True):
@@ -25,6 +34,25 @@ class Season(SQLModel, table=True):
     number: int
     order: str
     series_id: int = Field(foreign_key="series.tvdb_id")
+
+    season_episodes: list[SeasonEpisode] = Relationship(
+        back_populates="season",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+        },
+    )
+
+
+class SeriesConfig(SQLModel, table=True):
+    series_id: int = Field(
+        foreign_key="series.tvdb_id",
+        primary_key=True,
+        ondelete="CASCADE",
+    )
+    order: str = Field(default="official")
+    language: str = Field(default="eng", min_length=3, max_length=3, nullable=True)
+
+    series: 'Series' = Relationship(back_populates="config")
 
 
 class Series(SQLModel, table=True):
@@ -34,6 +62,21 @@ class Series(SQLModel, table=True):
     last_aired: date
     retrieved: date
     keep_updated: bool
+
+    seasons: list[Season] = Relationship(
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+            "single_parent": True,
+        },
+    )
+
+    config: SeriesConfig = Relationship(
+        back_populates="series",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+            "single_parent": True,
+        },
+    )
 
     def __str__(self) -> str:
         result = textwrap.dedent(f"""\
@@ -55,16 +98,11 @@ class Series(SQLModel, table=True):
         return "\n".join(no_header_lines)
 
 
-class SeriesConfig(SQLModel, table=True):
-    series_id: int = Field(foreign_key="series.tvdb_id", primary_key=True)
-    order: str = Field(default="official")
-    language: str = Field(default="eng", min_length=3, max_length=3, nullable=True)
-
 
 @dataclass(slots=True)
 class AllSeriesData:
-    series: Series
     config: SeriesConfig
+    series: Series
     seasons: list[Season]
     episodes: list[Episode]
     season_episodes: list[SeasonEpisode]

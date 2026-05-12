@@ -66,8 +66,4 @@ def track(provider: Provider, args: ap.Namespace):
     _get_full_info = utils.with_spinner(provider.get_all, "Fetching full series info")
     all_data = _get_full_info(config=config)
 
-    cache.add([config])
-    cache.add([all_data.series])
-    cache.add(all_data.seasons)
-    cache.add(all_data.episodes)
-    cache.add(all_data.season_episodes)
+    cache.add(all_data.flatten())

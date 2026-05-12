@@ -8,8 +8,8 @@
     - [x] Remove
         - [x] Fix cascading deletes
     - [x] Track
-    - [ ] Modify
-        - [ ] Add query for all orders in a series
+    - [x] Modify
+        - [x] Add query for all orders in a series
     - [x] Fetch-Episodes
     - [ ] REFACTOR: provider.get_all() to use relationships
     - [ ] REFACTOR: refresh to only update Season / Episode data

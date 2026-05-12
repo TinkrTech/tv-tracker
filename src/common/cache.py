@@ -75,10 +75,7 @@ def has(tvdb_id: int) -> bool:
     return len(_result_of(all_matching)) != 0
 
 
-def find(titles: str|list[str], *, strict:bool=False, query_options=None) -> list[Series]:
-    global __ENGINE
-    assert titles is not None
-
+def _where_titles_match(titles: str|Iterable[str], strict: bool=True):
     if not isinstance(titles, list):
         titles = [titles]
 
@@ -93,21 +90,30 @@ def find(titles: str|list[str], *, strict:bool=False, query_options=None) -> lis
                 for title in titles
             )
         )
+    return titles_match
+
+
+def find(titles: str|list[str], *, strict:bool=False, query_options=None) -> list[Series]:
+    global __ENGINE
 
     if query_options is None:
         query_options = []
 
     results = _result_of(
         select(Series)\
-        .where(titles_match)\
+        .where(_where_titles_match(titles, strict=strict))\
         .order_by(func.char_length(Series.title))
         .options(*query_options)
     )
 
     return results
 
-def series_orders(series_id: SeriesId):
-    query = select(Season.order, func.count(Season.order))\
+def series_orders(series_id: SeriesId, *, with_count: bool = False):
+    cols = Season.order
+    if with_count:
+        cols = Season.order, func.count(Season.order)
+
+    query = select(cols)\
         .where(Season.series_id == series_id)\
         .group_by(Season.order)\
         .order_by(Season.order)

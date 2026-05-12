@@ -3,7 +3,7 @@
         - [x] reset the order
         - [ ] Fix import
     - [x] List
-    - [ ] Info
+    - [x] Info
     - [x] Refresh
     - [x] Remove
         - [x] Fix cascading deletes

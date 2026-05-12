@@ -2,14 +2,14 @@
 import argparse as ap
 import logging as log
 import dataclasses
-from typing import Any
+from typing import Any, Iterable
 
 from common import cache
 from common.model import Series
 
 
 def validate_field_name(value: str):
-    SERIES_FIELDS = tuple(field.name for field in dataclasses.fields(Series)
+    SERIES_FIELDS = tuple(field.name for field in Series.__fields__
                       if field.name not in ["seasons"])
     if value.lower() not in SERIES_FIELDS:
         msg = f"field must be one of {SERIES_FIELDS} not '{value}'\n"
@@ -26,12 +26,12 @@ def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("-s", "--strict", default=False, action="store_true", help="Only match titles which exactly match.")
 
 
-def as_view(fields: list[str], series: Series) -> dict[str, Any]:
-    series = dataclasses.asdict(series)
+def as_view(fields: Iterable[str], series: Series) -> dict[str, Any]:
+    series = series.model_dump()
     return {field: series[field] for field in fields}
 
 
-def output_as_csv(fields: list[str], all_series: list[Series], delimeter=",", with_headers=False) -> None:
+def output_as_csv(fields: Iterable[str], all_series: Iterable[Series], delimeter=",", with_headers=False) -> None:
     import csv, sys
     writer = csv.DictWriter(sys.stdout, fields, delimiter=delimeter)
     if with_headers:
@@ -41,7 +41,7 @@ def output_as_csv(fields: list[str], all_series: list[Series], delimeter=",", wi
         writer.writerow(as_view(fields, series))
 
 
-def output_as_toml(fields: list[str], all_series: list[Series]) -> None:
+def output_as_toml(fields: Iterable[str], all_series: Iterable[Series]) -> None:
     from datetime import date
 
     for i, series in enumerate(all_series):
@@ -61,10 +61,9 @@ def output_as_toml(fields: list[str], all_series: list[Series]) -> None:
 
 
 def info(args: ap.Namespace) -> None:
-    cache.load()
-    tracked = list(cache.find(args.title, strict=args.strict))
+    tracked = cache.find(args.title, strict=args.strict)
 
-    fields = args.fields if args.fields is not None else SERIES_FIELDS
+    fields = args.fields if args.fields is not None else Series.__fields__.keys()
     output_csvlike = lambda delimeter: output_as_csv(fields, tracked, with_headers=args.with_headers, delimeter=delimeter)
     if args.format == "csv":
         output_csvlike(delimeter=",")

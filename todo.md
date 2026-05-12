@@ -1,14 +1,19 @@
 - [ ] FEAT: Refactor cache into sqlite db
-    - [x] Generate CREATE TABLE from dataclass
-    - [x] auto-detect upgrades and have auto-migration
-    - [x] use ORM?
-        - [x] SqlModel
-    - [x] Add orders to database
-    - [ ] Add query for all orders in a series
-    - [x] Store Seasons and Episodes
     - [ ] Migration from TOML to sqlite
         - [x] reset the order
         - [ ] Fix import
+    - [x] List
+    - [ ] Info
+    - [x] Refresh
+    - [x] Remove
+        - [x] Fix cascading deletes
+    - [x] Track
+    - [ ] Modify
+        - [ ] Add query for all orders in a series
+    - [x] Fetch-Episodes
+    - [ ] REFACTOR: provider.get_all() to use relationships
+    - [ ] REFACTOR: refresh to only update Season / Episode data
+
 - [ ] Info
     - [ ] Allow format strings?
     - [ ] Allow for querying?

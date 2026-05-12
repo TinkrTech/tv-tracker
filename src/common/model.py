@@ -7,8 +7,8 @@ from dataclasses import dataclass
 
 # Episodes are many-to-many
 class SeasonEpisode(SQLModel, table=True):
-    season_id: int = Field(primary_key=True, foreign_key="season.tvdb_id")
-    episode_id: int = Field(primary_key=True, foreign_key="episode.tvdb_id")
+    season_id: int = Field(primary_key=True, foreign_key="season.tvdb_id", ondelete="CASCADE")
+    episode_id: int = Field(primary_key=True, foreign_key="episode.tvdb_id", ondelete="CASCADE")
     number: int
 
     season: 'Season' = Relationship(back_populates="season_episodes")
@@ -23,9 +23,7 @@ class Episode(SQLModel, table=True):
 
     season_episodes: list[SeasonEpisode] = Relationship(
         back_populates="episode",
-        sa_relationship_kwargs={
-            "cascade": "all, delete-orphan",
-        },
+        cascade_delete=True,
     )
 
 
@@ -33,20 +31,18 @@ class Season(SQLModel, table=True):
     tvdb_id: int = Field(primary_key=True)
     number: int
     order: str
-    series_id: int = Field(foreign_key="series.tvdb_id")
+    series_id: int = Field(foreign_key="series.tvdb_id", ondelete="CASCADE")
 
     season_episodes: list[SeasonEpisode] = Relationship(
         back_populates="season",
-        sa_relationship_kwargs={
-            "cascade": "all, delete-orphan",
-        },
+        cascade_delete=True,
     )
 
 
 class SeriesConfig(SQLModel, table=True):
     series_id: int = Field(
-        foreign_key="series.tvdb_id",
         primary_key=True,
+        foreign_key="series.tvdb_id",
         ondelete="CASCADE",
     )
     order: str = Field(default="official")
@@ -64,18 +60,12 @@ class Series(SQLModel, table=True):
     keep_updated: bool
 
     seasons: list[Season] = Relationship(
-        sa_relationship_kwargs={
-            "cascade": "all, delete-orphan",
-            "single_parent": True,
-        },
+        cascade_delete=True,
     )
 
     config: SeriesConfig = Relationship(
         back_populates="series",
-        sa_relationship_kwargs={
-            "cascade": "all, delete-orphan",
-            "single_parent": True,
-        },
+        cascade_delete=True,
     )
 
     def __str__(self) -> str:
@@ -101,8 +91,8 @@ class Series(SQLModel, table=True):
 
 @dataclass(slots=True)
 class AllSeriesData:
-    config: SeriesConfig
     series: Series
+    config: SeriesConfig
     seasons: list[Season]
     episodes: list[Episode]
     season_episodes: list[SeasonEpisode]

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from collections.abc import Iterable, Iterator
 
-from sqlmodel import SQLModel, select, delete as delete_, or_, and_, func
+from sqlmodel import SQLModel, select, delete as delete_, or_, and_, func, text as text_
 import sqlmodel
 from sqlalchemy.orm import selectinload
 
@@ -33,6 +33,11 @@ def initialize(path: Path) -> None:
     uri = f"sqlite:///{path}"
 
     __ENGINE = sqlmodel.create_engine(uri)
+
+    with sqlmodel.Session(__ENGINE) as session:
+        session.exec(text_("PRAGMA foreign_keys = ON"))
+        session.commit()
+
     SQLModel.metadata.create_all(__ENGINE)
     log.debug(f"Loaded engine from '{uri}'")
 
@@ -172,4 +177,10 @@ def delete(deleted: Iterable[SeriesId]) -> None:
         deletions = delete_(Series)\
             .where(Series.tvdb_id.in_(deleted))
         session.exec(deletions)
+
+        orphans = select(Episode)\
+            .where(~Episode.season_episodes.any())
+
+        for orphan in session.exec(orphans).all():
+            session.delete(orphan)
         session.commit()

@@ -23,7 +23,9 @@ def modify(args: ap.Namespace):
     updated_series = []
     for series in all_series:
         orders = cache.series_orders(series.tvdb_id)
-        series.config.language = args.language
+
+        if args.language:
+            series.config.language = args.language
 
         if args.order not in orders:
             log.warning(f"Supported orders for \"{series.stub_info()}\" are {orders}. Skipping...")

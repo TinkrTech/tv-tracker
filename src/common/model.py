@@ -46,7 +46,7 @@ class SeriesConfig(SQLModel, table=True):
         ondelete="CASCADE",
     )
     order: str = Field(default="official")
-    language: str = Field(default="eng", min_length=3, max_length=3, nullable=True)
+    language: str = Field(default="eng", min_length=3, max_length=3)
 
     series: 'Series' = Relationship(back_populates="config")
 

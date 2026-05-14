@@ -1,8 +1,7 @@
 from datetime import date
 import textwrap
 from sqlmodel import SQLModel, Field, Relationship
-from typing import Any, Optional, Generator
-from dataclasses import dataclass
+from typing import Optional
 
 
 # Episodes are many-to-many
@@ -86,27 +85,3 @@ class Series(SQLModel, table=True):
     def full_info(self) -> str:
         no_header_lines = str(self).split('\n')[1:]
         return "\n".join(no_header_lines)
-
-
-
-@dataclass(slots=True)
-class AllSeriesData:
-    series: Series
-    config: SeriesConfig
-    seasons: list[Season]
-    episodes: list[Episode]
-    season_episodes: list[SeasonEpisode]
-
-    def __iter__(self):
-        for value in self.__slots__:
-            yield getattr(self, value)
-
-    def flatten(self) -> Generator[SQLModel, None, None]:
-        for key in self.__slots__:
-            value = getattr(self, key)
-            if not isinstance(value, list):
-                yield value
-                continue
-
-            for item in value:
-                yield item

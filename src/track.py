@@ -6,14 +6,14 @@ from typing import Protocol
 from common.provider import SearchResult
 from common import utils
 from common import cache
-from common.model import SeriesConfig, AllSeriesData
+from common.model import SeriesConfig, Series
 
 # This class is used for Duck-Typing; if it walks like a duck and quacks like a duck, it's a duck
 class Provider(Protocol):
     def search(self, query: dict|None, translate: str) -> list[SearchResult]:
         ...
 
-    def get_all(self, series_id: int, config: SeriesConfig) -> AllSeriesData:
+    def get_all(self, series_id: int, config: SeriesConfig) -> Series:
         ...
 
 
@@ -64,6 +64,6 @@ def track(provider: Provider, args: ap.Namespace):
         language=args.translate,
     )
     _get_full_info = utils.with_spinner(provider.get_all, "Fetching full series info")
-    all_data = _get_full_info(config=config)
+    series = _get_full_info(config=config)
 
-    cache.add(all_data.flatten())
+    cache.add(series)

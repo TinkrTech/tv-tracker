@@ -11,11 +11,13 @@
     - [x] Modify
         - [x] Add query for all orders in a series
     - [x] Fetch-Episodes
-    - [ ] REFACTOR: provider.get_all() to use relationships
-    - [ ] REFACTOR: refresh to only update Season / Episode data
+    - [x] REFACTOR: provider.get_all() to use relationships
 
+- [ ] Fetch-Episodes
+    - [ ] Add "order" option
 - [ ] Info
     - [ ] Allow format strings?
     - [ ] Allow for querying?
+    - [ ] Add additional default query fields: language, order, all_orders (Season count per order), etc
 - [ ] Cache db
     - add a settings.json

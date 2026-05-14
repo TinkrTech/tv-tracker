@@ -7,7 +7,7 @@ from sqlmodel import SQLModel, select, delete as delete_, or_, and_, func, text 
 import sqlmodel
 from sqlalchemy.orm import selectinload
 
-from common.model import Series, Season, Episode, SeasonEpisode, AllSeriesData, SeriesConfig
+from common.model import Series, Season, Episode, SeasonEpisode, SeriesConfig
 
 
 __ENGINE = None
@@ -156,8 +156,11 @@ def list_seasons(series_id: SeriesId, *, order: str, season_number: int|None=Non
     return _result_of(query)
 
 
-def add(items: Iterable[SQLModel]) -> None:
+def add(items: SQLModel|Iterable[SQLModel]) -> None:
     global __ENGINE
+
+    if isinstance(items, SQLModel):
+        items = [items]
 
     with sqlmodel.Session(__ENGINE) as session:
         session.add_all(items)
@@ -165,7 +168,6 @@ def add(items: Iterable[SQLModel]) -> None:
 
 
 def update(items: SQLModel|Iterable[SQLModel]) -> None:
-    from typing import reveal_type
     global __ENGINE
 
     if isinstance(items, SQLModel):

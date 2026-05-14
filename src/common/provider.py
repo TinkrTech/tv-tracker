@@ -188,7 +188,7 @@ class TVDBProvider:
     def get_all(
         self,
         config: SeriesConfig,
-    ) -> AllSeriesData:
+    ) -> Series:
         raw = self._make_request(endpoint=f"series/{config.series_id}/extended")["data"]
 
         series = self._extract_series(raw)
@@ -209,10 +209,4 @@ class TVDBProvider:
         # Linked in function
         self._fetch_all_episodes(series, valid_orders.values())
 
-        return AllSeriesData(
-            series=series,
-            config=[],
-            episodes=[],
-            seasons=[],
-            season_episodes=[],
-        )
+        return series

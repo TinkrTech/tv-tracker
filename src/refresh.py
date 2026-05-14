@@ -5,13 +5,13 @@ from typing import Protocol
 from sqlmodel import select
 from sqlalchemy.orm import selectinload
 from common.model import Series, SeriesConfig
-from common.provider import AllSeriesData
+from common.provider import Series
 from common import cache
 from common import utils
 
 # This class is used for Duck-Typing; if it walks like a duck and quacks like a duck, it's a duck
 class Provider(Protocol):
-    def get_all(self, config: SeriesConfig) -> AllSeriesData:
+    def get_all(self, config: SeriesConfig) -> Series:
         ...
 
 
@@ -20,7 +20,7 @@ def add_args(parser: ap.ArgumentParser):
 
 
 @utils.as_async
-def fetch_series(provider: Provider, config: SeriesConfig) -> AllSeriesData:
+def fetch_series(provider: Provider, config: SeriesConfig) -> Series:
     return provider.get_all(config)
 
 
@@ -36,10 +36,9 @@ async def _refresh(provider: Provider, args: ap.Namespace):
     all_series = cache._result_of(query)
 
     configs = [series.config for series in all_series]
-    updated: list[AllSeriesData] = await asyncio.gather(*[fetch_series(provider, config) for config in configs])
+    updated: list[Series] = await asyncio.gather(*[fetch_series(provider, config) for config in configs])
 
-    for series_data in updated:
-        cache.update(series_data.flatten())
+    cache.update(updated)
 
 
 def refresh(provider: Provider, args: ap.Namespace):

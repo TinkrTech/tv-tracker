@@ -66,6 +66,7 @@ def migrate_toml(old: Path) -> None:
         statement = select(Series)
         count_added = len(session.exec(statement).all())
 
+    fix_configs()
     log.debug(f"Added {count_added} items")
 
 

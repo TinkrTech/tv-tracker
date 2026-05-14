@@ -63,8 +63,6 @@ def get_args() -> argparse.Namespace:
     fetch_episodes.add_args(make_parser("fetch-episodes",   "Fetches episodes list for a tracked series and displays it."))
 
     args = parser.parse_args()
-    if args.no_animations:
-        utils.USE_ANIMATIONS = False
     return args
 
 
@@ -99,6 +97,13 @@ def init_verbose_logger() -> None:
     logger.addHandler(info_handler)
 
 
+def _force_refresh():
+    parser = argparse.ArgumentParser()
+    refresh.add_args(parser)
+    args = parser.parse_args(["--force"])
+    refresh.refresh(TVDBProvider(os.getenv('TVDB_KEY')), args)
+
+
 def initialize_cache(args: argparse.Namespace):
     args.cache_path: Path = args.cache_path
     old_cache = None
@@ -120,10 +125,12 @@ def initialize_cache(args: argparse.Namespace):
         except Exception as e:
             args.cache_path.unlink()
             raise e
+        _force_refresh()
     elif old_cache is not None:
         logging.info(f"Cache file '{old_cache}' was not found. A new cache will be started.")
     else:
         logging.debug(f"No existing cache.")
+
 
 def main():
     init_error_logger()
@@ -132,10 +139,10 @@ def main():
     if not args.quiet:
         init_verbose_logger()
 
-    initialize_cache(args)
-
     utils.USE_ANIMATIONS = not args.no_animations
     utils.QUIET = args.quiet
+
+    initialize_cache(args)
 
     make_provider = utils.with_spinner(TVDBProvider, "Fetching session token")
 

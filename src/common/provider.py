@@ -110,52 +110,52 @@ class TVDBProvider:
             ))
         return results
 
-    def get_episodes(self, config: SeriesConfig) -> list[EpisodeResult]:
-        lang = config.language if config.language else ""
-        raw = self._make_request(endpoint=f"series/{config.series_id}/episodes/{config.order}/{lang}")["data"]
-
-        results = []
-        for raw_episode in raw["episodes"]:
-            if raw_episode["aired"] is not None:
-                aired = date.fromisoformat(raw_episode["aired"])
-            else:
-                aired = None
-
-            episode = Episode(
-                tvdb_id=int(raw_episode["id"]),
-                title=raw_episode["name"],
-                overview=raw_episode.get("overview", None),
-                aired=aired,
-            )
-            results.append(EpisodeResult(
-                episode=episode,
-                order =config.order,
-                number=raw_episode["number"],
-                season=raw_episode["seasonNumber"],
-            ))
-
-        return results
-
-    def _link_season_episodes(self, seasons: list[Season], episode_results: list[EpisodeResult]) -> list[SeasonEpisode]:
-        seasons_with_type = [
-            season for season in seasons
-            if season.order == episode_results[0].order
-        ]
-
-        seasons_by_number = {
-            season.number: season
-            for season in seasons_with_type
+    def _fetch_all_episodes(self, series: Series, orders: list[str]) -> list[Episode]:
+        """
+        Fetch all episodes and ordering for a series
+        Updates the seasons in a series with SeasonEpisodes which are linked to episodes
+        """
+        # This would be a lot easier if the API returned what it said it does
+        # Sorry in advance
+        seasons = {
+            (season.order, season.number): season
+            for season in series.seasons
         }
 
-        season_episodes = []
-        for result in episode_results:
-            season_episodes.append(SeasonEpisode(
-                season_id=seasons_by_number[result.season].tvdb_id,
-                episode_id=result.episode.tvdb_id,
-                number=result.number,
-            ))
+        episodes: dict[int, Episode] = {}
+        for order in orders:
+            endpoint = f"series/{series.tvdb_id}/episodes/{order}/{series.config.language}"
+            response = self._make_request(endpoint=endpoint)["data"]
 
-        return season_episodes
+            for raw_episode in response["episodes"]:
+                episode_id = int(raw_episode["id"])
+                episode = episodes.get(episode_id)
+                if episode is None:
+                    if raw_episode["aired"] is not None:
+                        aired = date.fromisoformat(raw_episode["aired"])
+                    else:
+                        aired = None
+
+                    episode = Episode(
+                        tvdb_id=episode_id,
+                        title=raw_episode["name"],
+                        overview=raw_episode.get("overview", None),
+                        aired=aired,
+                    )
+                    episodes[episode_id] = episode
+
+                season_num = int(raw_episode["seasonNumber"])
+                episode_num = int(raw_episode["number"])
+                season = seasons[(order, season_num)] # if this fails, we have a problem
+                season.season_episodes.append(SeasonEpisode(
+                    season_id=season.tvdb_id,
+                    episode_id=episode.tvdb_id,
+                    season=season,
+                    episode=episode,
+                    number=episode_num,
+                ))
+
+        return episodes
 
     def _extract_series(self, response: dict) -> Series:
         """Extract relevant info from the series/{series_id}/extended response"""
@@ -192,24 +192,27 @@ class TVDBProvider:
         raw = self._make_request(endpoint=f"series/{config.series_id}/extended")["data"]
 
         series = self._extract_series(raw)
-        valid_orders = [order["type"] for order in raw["seasonTypes"]]
+        valid_orders = {order["id"]: order["type"] for order in raw["seasonTypes"]}
 
-        if config.order not in valid_orders:
-            config.order = valid_orders[0]
+        if config.order not in valid_orders.values():
+            config.order = valid_orders[raw["defaultSeasonType"]]
 
         if config.language is not None:
             translation = self._make_request(endpoint=f"series/{config.series_id}/translations/{config.language}")["data"]
             series.title = translation["name"]
 
+        series.config = config
+
         seasons = self._extract_seasons(raw)
-        episode_results = self.get_episodes(config)
-        episodes = [result.episode for result in episode_results]
-        season_episodes = self._link_season_episodes(seasons, episode_results)
+        series.seasons = seasons
+
+        # Linked in function
+        self._fetch_all_episodes(series, valid_orders.values())
 
         return AllSeriesData(
             series=series,
-            config=config,
-            seasons=seasons,
-            episodes=episodes,
-            season_episodes=season_episodes,
+            config=[],
+            episodes=[],
+            seasons=[],
+            season_episodes=[],
         )

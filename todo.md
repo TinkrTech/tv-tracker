@@ -1,7 +1,7 @@
-- [ ] FEAT: Refactor cache into sqlite db
-    - [ ] Migration from TOML to sqlite
+- [x] FEAT: Refactor cache into sqlite db
+    - [x] Migration from TOML to sqlite
         - [x] reset the order
-        - [ ] Fix import
+        - [x] Fix import
     - [x] List
     - [x] Info
     - [x] Refresh

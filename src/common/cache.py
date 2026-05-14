@@ -45,19 +45,32 @@ def initialize(path: Path) -> None:
 def migrate_toml(old: Path) -> None:
     import tomllib
     from datetime import date
+
     assert old.exists()
     assert old.suffix == ".toml"
     assert __ENGINE != None
 
-    def load_old() -> list[Series]:
-        with open(old, 'rb') as cfg:
-            entries = tomllib.load(cfg)
-        for key, value in entries.items():
-            entries[key]["last_aired"] = date.fromisoformat(value["last_aired"])
-            entries[key]["retrieved"] = date.fromisoformat(value["retrieved"])
-        return [Series(**entry) for entry in entries.values()]
+    def load_one(entry: dict) -> Series:
+        config = SeriesConfig(
+            series_id=entry["tvdb_id"],
+            order=entry.get("use_order"),
+            language=entry.get("use_language"),
+        )
+        series = Series(
+            tvdb_id=entry["tvdb_id"],
+            title=entry["title"],
+            year=entry["year"],
+            last_aired=date.fromisoformat(entry["last_aired"]),
+            retrieved=date.fromisoformat(entry["retrieved"]),
+            keep_updated=entry["keep_updated"],
+            config=config,
+        )
+        return series
 
-    items = load_old()
+    with open(old, "rb") as cfg:
+        entries = tomllib.load(cfg)
+        items = [load_one(entry) for entry in entries.values()]
+
     log.debug(f"Loaded {len(items)} items")
 
     with sqlmodel.Session(__ENGINE) as session:
@@ -66,7 +79,6 @@ def migrate_toml(old: Path) -> None:
         statement = select(Series)
         count_added = len(session.exec(statement).all())
 
-    fix_configs()
     log.debug(f"Added {count_added} items")
 
 

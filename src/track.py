@@ -13,7 +13,7 @@ class Provider(Protocol):
     def search(self, query: dict, translate: str) -> list[SearchResult]:
         ...
 
-    def get_all(self, config: SeriesConfig) -> Series:
+    def fetch_series(self, config: SeriesConfig) -> Series:
         ...
 
 
@@ -63,7 +63,7 @@ def track(provider: Provider, args: ap.Namespace):
         order="default",
         language=args.translate,
     )
-    _get_full_info = utils.with_spinner(provider.get_all, "Fetching full series info")
+    _get_full_info = utils.with_spinner(provider.fetch_series, "Fetching full series info")
     series = _get_full_info(config=config)
 
     cache.add(series)

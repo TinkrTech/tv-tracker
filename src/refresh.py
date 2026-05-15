@@ -9,7 +9,7 @@ from common import utils
 
 # This class is used for Duck-Typing; if it walks like a duck and quacks like a duck, it's a duck
 class Provider(Protocol):
-    def get_all(self, config: SeriesConfig) -> Series:
+    def fetch_series(self, config: SeriesConfig) -> Series:
         ...
 
 
@@ -19,7 +19,7 @@ def add_args(parser: ap.ArgumentParser) -> None:
 
 @utils.as_async
 def fetch_series(provider: Provider, config: SeriesConfig) -> Series:
-    return provider.get_all(config)
+    return provider.fetch_series(config)
 
 
 async def _refresh(provider: Provider, args: ap.Namespace) -> None:

@@ -48,13 +48,6 @@ class SearchResult:
     def full_info(self) -> str:
         return str(self)
 
-@dataclass
-class EpisodeResult:
-    episode: Episode
-    order: str
-    season: int
-    number: int
-
 
 class TVDBProvider:
     def __init__(self, api_token: str):
@@ -185,7 +178,7 @@ class TVDBProvider:
             ))
         return seasons
 
-    def get_all(
+    def fetch_series(
         self,
         config: SeriesConfig,
     ) -> Series:

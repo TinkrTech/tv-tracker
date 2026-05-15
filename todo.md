@@ -1,23 +1,13 @@
-- [x] FEAT: Refactor cache into sqlite db
-    - [x] Migration from TOML to sqlite
-        - [x] reset the order
-        - [x] Fix import
-    - [x] List
-    - [x] Info
-    - [x] Refresh
-    - [x] Remove
-        - [x] Fix cascading deletes
-    - [x] Track
-    - [x] Modify
-        - [x] Add query for all orders in a series
-    - [x] Fetch-Episodes
-    - [x] REFACTOR: provider.get_all() to use relationships
-
 - [ ] Fetch-Episodes
     - [ ] Add "order" option
 - [ ] Info
     - [ ] Allow format strings?
     - [ ] Allow for querying?
     - [ ] Add additional default query fields: language, order, all_orders (Season count per order), etc
+- [ ] Track
+    - [ ] Make case insensitive (e.g. severance)
 - [ ] Cache db
     - add a settings.json
+
+- [ ] Testing:
+    - [ ] Add pytest tests

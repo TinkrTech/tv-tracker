@@ -1,7 +1,6 @@
 # So named to avoid name shadowing for stdlib module
 import argparse as ap
 import logging as log
-import dataclasses
 from typing import Any, Iterable
 
 from common import cache

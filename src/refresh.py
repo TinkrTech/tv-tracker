@@ -2,8 +2,6 @@ import argparse as ap
 import asyncio
 from typing import Protocol
 
-from sqlmodel import select
-from sqlalchemy.orm import selectinload
 from common.model import Series, SeriesConfig
 from common.provider import Series
 from common import cache
@@ -26,14 +24,11 @@ def fetch_series(provider: Provider, config: SeriesConfig) -> Series:
 
 async def _refresh(provider: Provider, args: ap.Namespace):
     cache.fix_configs()
-    where=True
-    if not args.force:
+    if args.force:
+        where=True
+    else:
         where = Series.keep_updated == True
-
-    query = select(Series)\
-        .where(where)\
-        .options(selectinload(Series.config))
-    all_series = cache._result_of(query)
+    all_series = cache.result_of(cache.select_series(), where=where)
 
     configs = [series.config for series in all_series]
     updated: list[Series] = await asyncio.gather(*[fetch_series(provider, config) for config in configs])

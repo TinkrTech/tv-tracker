@@ -14,7 +14,7 @@ def add_args(parser: ap.ArgumentParser) -> None:
 def remove(args: ap.Namespace) -> None:
     to_remove = []
     for title in args.title:
-        matches = list(cache.find(title, strict=args.strict))
+        matches = cache.find(title, strict=args.strict)
         if len(matches) == 0:
             log.info(f"Series '{title}' was not tracked, so was not removed.")
         elif len(matches) == 1:

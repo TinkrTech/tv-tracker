@@ -1,7 +1,6 @@
 import argparse as ap
 import logging as log
 
-from sqlalchemy.orm import selectinload
 from common import utils
 from common import cache
 from common.model import Series, Season
@@ -14,12 +13,7 @@ def add_args(parser: ap.ArgumentParser) -> None:
 
 
 def fetch_episodes(args: ap.Namespace) -> None:
-    tracked = cache.find(
-        args.title,
-        query_options=[
-            selectinload(Series.config),
-        ]
-    )
+    tracked = cache.find(args.title)
 
     if len(tracked) == 0:
         log.warning(f"No tracked series matched the title '{args.title}'. Skipping...")
@@ -30,10 +24,19 @@ def fetch_episodes(args: ap.Namespace) -> None:
     else:
         selection = tracked[0]
 
-    seasons: list[Season] = cache.list_seasons(
-        selection.tvdb_id,
-        order=selection.config.order,
-        season_number=args.season
+    where = [
+        Season.order == selection.config.order,
+    ]
+
+    if args.season is not None:
+        where.append(Season.number == args.season)
+    else:
+        where.append(Season.number != 0)
+
+    seasons = cache.result_of(
+        cache.select_seasons(series_id=selection.tvdb_id),
+        where=where,
+        order_by=Season.number
     )
 
     if args.season is not None and len(seasons) == 0:

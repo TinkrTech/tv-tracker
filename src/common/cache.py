@@ -5,20 +5,17 @@ from collections.abc import Iterable, Iterator
 
 from sqlmodel import SQLModel, select, delete as delete_, or_, and_, func, text as text_
 import sqlmodel
+from sqlmodel.sql.expression import SelectOfScalar as Select, ColumnElement
 from sqlalchemy.orm import selectinload
 
 from common.model import Series, Season, Episode, SeasonEpisode, SeriesConfig
+from typing import Type
 
 
 __ENGINE = None
-type SeriesId = type(Series.tvdb_id)
-
-
-def _result_of(statement):
-    global __ENGINE
-
-    with sqlmodel.Session(__ENGINE) as session:
-        return session.exec(statement).all()
+type SeriesId = Type[Series.tvdb_id]
+type Column = ColumnElement
+type Where = ColumnElement[bool]
 
 
 def initialize(path: Path) -> None:
@@ -40,6 +37,40 @@ def initialize(path: Path) -> None:
 
     SQLModel.metadata.create_all(__ENGINE)
     log.debug(f"Loaded engine from '{uri}'")
+
+
+def result_of[T](
+        selection: Select[T],
+        *,
+        where: Where|Iterable[Where]=True,
+        order_by: Column|None=None
+    ) -> list[T]:
+    global __ENGINE
+
+    if isinstance(where, Iterable):
+        where = and_(*where)
+
+    query = selection\
+        .where(where)\
+        .order_by(order_by)
+
+    with sqlmodel.Session(__ENGINE) as session:
+        return session.exec(query).all()
+
+
+def select_series() -> Select[Series]:
+    return select(Series).options(
+        selectinload(Series.config)
+    )
+
+
+def select_seasons(*, series_id: SeriesId|None = None) -> Select[Season]:
+    return select(Season)\
+        .where(Season.series_id == series_id)\
+        .options(
+            selectinload(Season.season_episodes)\
+            .selectinload(SeasonEpisode.episode)
+        )
 
 
 def migrate_toml(old: Path) -> None:
@@ -76,19 +107,20 @@ def migrate_toml(old: Path) -> None:
     with sqlmodel.Session(__ENGINE) as session:
         session.add_all(items)
         session.commit()
-        statement = select(Series)
-        count_added = len(session.exec(statement).all())
 
+    count_added = len(result_of(select_series()))
     log.debug(f"Added {count_added} items")
 
 
 def has(tvdb_id: int) -> bool:
-    all_matching = select(Series)\
-        .where(Series.tvdb_id == tvdb_id)
-    return len(_result_of(all_matching)) != 0
+    result = result_of(
+        select_series(),
+        where=Series.tvdb_id == tvdb_id
+    )
+    return len(result) != 0
 
 
-def _where_titles_match(titles: str|Iterable[str], strict: bool=True):
+def _titles_match(titles: str|Iterable[str], strict: bool=True) -> Where:
     if not isinstance(titles, list):
         titles = [titles]
 
@@ -106,20 +138,13 @@ def _where_titles_match(titles: str|Iterable[str], strict: bool=True):
     return titles_match
 
 
-def find(titles: str|list[str], *, strict:bool=False, query_options=None) -> list[Series]:
-    global __ENGINE
-
-    if query_options is None:
-        query_options = []
-
-    results = _result_of(
-        select(Series)\
-        .where(_where_titles_match(titles, strict=strict))\
-        .order_by(func.char_length(Series.title))
-        .options(*query_options)
+def find(titles: str|list[str], *, strict:bool=False) -> list[Series]:
+    return result_of(
+        select_series(),
+        where=_titles_match(titles, strict=strict),
+        order_by=func.char_length(Series.title)
     )
 
-    return results
 
 def series_orders(series_id: SeriesId, *, with_count: bool = False):
     cols = Season.order
@@ -130,42 +155,20 @@ def series_orders(series_id: SeriesId, *, with_count: bool = False):
         .where(Season.series_id == series_id)\
         .group_by(Season.order)\
         .order_by(Season.order)
-    return _result_of(query)
-
-
-def list_all[T](t: T = Series) -> list[T]:
-    return _result_of(select(t))
+    return result_of(query)
 
 
 def fix_configs() -> None:
     global __ENGINE
 
     with sqlmodel.Session(__ENGINE) as session:
-        all_series = session.exec(select(Series)).all()
+        all_series = session.exec(select_series()).all()
 
         for series in all_series:
             if not series.config:
                 config = SeriesConfig(series_id=series.tvdb_id, series=series)
                 session.add(config)
         session.commit()
-
-
-def list_seasons(series_id: SeriesId, *, order: str, season_number: int|None=None) -> list[Season]:
-    where = and_(Season.series_id == series_id, Season.order == order)
-    if season_number is not None:
-        where = and_(where, Season.number == season_number)
-    else:
-        where = and_(where, Season.number != 0)
-
-    query = select(Season)\
-        .where(where)\
-        .order_by(Season.number)\
-        .options(
-            selectinload(Season.season_episodes)\
-            .selectinload(SeasonEpisode.episode)
-        )
-
-    return _result_of(query)
 
 
 def add(items: SQLModel|Iterable[SQLModel]) -> None:

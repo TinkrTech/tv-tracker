@@ -13,7 +13,6 @@ import track
 from common.provider import TVDBProvider
 from common import cache
 from common import utils
-from common import model
 
 
 def get_args() -> argparse.Namespace:
@@ -70,7 +69,7 @@ def _list(args: argparse.Namespace) -> None:
     if len(args.title) > 0:
         tracked = cache.find(args.title, strict=args.strict)
     else:
-        tracked = cache.list_all()
+        tracked = cache.result_of(cache.select_series())
 
     for i, series in enumerate(tracked, 1):
         print(f"{i} - {series.stub_info()}")

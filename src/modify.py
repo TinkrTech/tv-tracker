@@ -1,10 +1,7 @@
 import argparse as ap
 import logging as log
 
-from sqlalchemy.orm import selectinload
-
 from common import cache
-from common.model import Series
 
 def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("title", help="The series to update.")
@@ -14,11 +11,7 @@ def add_args(parser: ap.ArgumentParser) -> None:
 
 
 def modify(args: ap.Namespace):
-    all_series = cache.find(
-        args.title,
-        strict=args.strict,
-        query_options=[selectinload(Series.config)]
-    )
+    all_series = cache.find(args.title, strict=args.strict)
 
     updated_series = []
     for series in all_series:

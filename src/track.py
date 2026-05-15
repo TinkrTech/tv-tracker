@@ -10,10 +10,10 @@ from common.model import SeriesConfig, Series
 
 # This class is used for Duck-Typing; if it walks like a duck and quacks like a duck, it's a duck
 class Provider(Protocol):
-    def search(self, query: dict|None, translate: str) -> list[SearchResult]:
+    def search(self, query: dict, translate: str) -> list[SearchResult]:
         ...
 
-    def get_all(self, series_id: int, config: SeriesConfig) -> Series:
+    def get_all(self, config: SeriesConfig) -> Series:
         ...
 
 

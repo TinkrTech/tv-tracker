@@ -15,6 +15,13 @@ from common import cache
 from common import utils
 
 
+def get_api_key() -> str:
+    key = os.getenv('TVDB_KEY')
+    if key is None:
+        raise NameError("environment is missing TVDB_KEY")
+    return key
+
+
 def get_args() -> argparse.Namespace:
     defaults = argparse.ArgumentParser(add_help=False)
     defaults.add_argument(
@@ -96,15 +103,14 @@ def init_verbose_logger() -> None:
     logger.addHandler(info_handler)
 
 
-def _force_refresh():
+def _force_refresh() -> None:
     parser = argparse.ArgumentParser()
     refresh.add_args(parser)
     args = parser.parse_args(["--force"])
-    refresh.refresh(TVDBProvider(os.getenv('TVDB_KEY')), args)
+    refresh.refresh(TVDBProvider(get_api_key()), args)
 
 
-def initialize_cache(args: argparse.Namespace):
-    args.cache_path: Path = args.cache_path
+def initialize_cache(args: argparse.Namespace) -> None:
     old_cache = None
     old_default_cache = Path("data/cache.toml")
 
@@ -131,7 +137,7 @@ def initialize_cache(args: argparse.Namespace):
         logging.debug(f"No existing cache.")
 
 
-def main():
+def main() -> None:
     init_error_logger()
     args = get_args()
     dotenv.load_dotenv()
@@ -156,12 +162,12 @@ def main():
             modify.modify(args)
         case "track":
             track.track(
-                make_provider(os.getenv('TVDB_KEY')),
+                make_provider(get_api_key()),
                 args
             )
         case "refresh":
             refresh.refresh(
-                make_provider(os.getenv('TVDB_KEY')),
+                make_provider(get_api_key()),
                 args
             )
         case "fetch-episodes":

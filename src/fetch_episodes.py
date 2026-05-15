@@ -3,6 +3,7 @@ import logging as log
 
 from common import utils
 from common import cache
+from common.cache import t_col
 from common.model import Series, Season
 
 
@@ -36,7 +37,7 @@ def fetch_episodes(args: ap.Namespace) -> None:
     seasons = cache.result_of(
         cache.select_seasons(series_id=selection.tvdb_id),
         where=where,
-        order_by=Season.number
+        order_by=t_col(Season.number)
     )
 
     if args.season is not None and len(seasons) == 0:

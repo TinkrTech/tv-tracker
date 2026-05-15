@@ -1,38 +1,50 @@
 import logging as log
 from pathlib import Path
 
-from collections.abc import Iterable, Iterator
+import typing
+from typing import Iterable, Sequence
 
-from sqlmodel import SQLModel, select, delete as delete_, or_, and_, func, text as text_
 import sqlmodel
+from sqlmodel import SQLModel, select, delete as delete_, or_, and_, func, text as text_
 from sqlmodel.sql.expression import SelectOfScalar as Select, ColumnElement
 from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import QueryableAttribute
 
 from common.model import Series, Season, Episode, SeasonEpisode, SeriesConfig
-from typing import Type
 
 
 __ENGINE = None
-type SeriesId = Type[Series.tvdb_id]
+type SeriesId = int
 type Column = ColumnElement
-type Where = ColumnElement[bool]
+type Where = bool|ColumnElement[bool]
 
 
-def initialize(path: Path) -> None:
+def t_col[T](val: T) -> ColumnElement[T]:
+    """Coerce type into a ColumnElement"""
+    return typing.cast(ColumnElement[T], val)
+
+
+def t_attr[T](val: T) -> QueryableAttribute[T]:
+    """Coerce type into a QueryableAttribute"""
+    return typing.cast(QueryableAttribute[T], val)
+
+
+def initialize(path: Path|None) -> None:
     global __ENGINE
 
     if __ENGINE is not None:
         return
 
-    if path == '':
+    if path is None:
         log.warn("Trying to initialize database with no path. NOTHING FROM THIS SESSION WILL BE SAVED!")
-        path = ":memory:"
-    uri = f"sqlite:///{path}"
+        uri = "sqlite:///:memory:"
+    else:
+        uri = f"sqlite:///{path}"
 
     __ENGINE = sqlmodel.create_engine(uri)
 
     with sqlmodel.Session(__ENGINE) as session:
-        session.exec(text_("PRAGMA foreign_keys = ON"))
+        session.execute(text_("PRAGMA foreign_keys = ON"))
         session.commit()
 
     SQLModel.metadata.create_all(__ENGINE)
@@ -44,7 +56,7 @@ def result_of[T](
         *,
         where: Where|Iterable[Where]=True,
         order_by: Column|None=None
-    ) -> list[T]:
+    ) -> Sequence[T]:
     global __ENGINE
 
     if isinstance(where, Iterable):
@@ -60,7 +72,7 @@ def result_of[T](
 
 def select_series() -> Select[Series]:
     return select(Series).options(
-        selectinload(Series.config)
+        selectinload(t_attr(Series.config))
     )
 
 
@@ -68,8 +80,8 @@ def select_seasons(*, series_id: SeriesId|None = None) -> Select[Season]:
     return select(Season)\
         .where(Season.series_id == series_id)\
         .options(
-            selectinload(Season.season_episodes)\
-            .selectinload(SeasonEpisode.episode)
+            selectinload(t_attr(Season.season_episodes))\
+            .selectinload(t_attr(SeasonEpisode.episode))
         )
 
 
@@ -115,19 +127,19 @@ def migrate_toml(old: Path) -> None:
 def has(tvdb_id: int) -> bool:
     result = result_of(
         select_series(),
-        where=Series.tvdb_id == tvdb_id
+        where=(Series.tvdb_id == tvdb_id)
     )
     return len(result) != 0
 
 
 def _titles_match(titles: str|Iterable[str], strict: bool=True) -> Where:
-    if not isinstance(titles, list):
+    if isinstance(titles, str):
         titles = [titles]
 
     titles = map(lambda x: x.lower(), titles)
 
     if strict:
-        titles_match = func.lower(Series.title).in_(titles)
+        titles_match: ColumnElement = func.lower(Series.title).in_(titles)
     else:
         titles_match = or_(
             *(
@@ -138,18 +150,19 @@ def _titles_match(titles: str|Iterable[str], strict: bool=True) -> Where:
     return titles_match
 
 
-def find(titles: str|list[str], *, strict:bool=False) -> list[Series]:
+def find(titles: str|list[str], *, strict:bool=False) -> Sequence[Series]:
     return result_of(
         select_series(),
         where=_titles_match(titles, strict=strict),
-        order_by=func.char_length(Series.title)
+        order_by=func.char_length(t_col(Series.title))
     )
 
 
 def series_orders(series_id: SeriesId, *, with_count: bool = False):
-    cols = Season.order
     if with_count:
-        cols = Season.order, func.count(Season.order)
+        cols = (Season.order, func.count(t_col(Season.order)))
+    else:
+        cols = (Season.order)
 
     query = select(cols)\
         .where(Season.series_id == series_id)\
@@ -199,11 +212,11 @@ def delete(deleted: Iterable[SeriesId]) -> None:
 
     with sqlmodel.Session(__ENGINE) as session:
         deletions = delete_(Series)\
-            .where(Series.tvdb_id.in_(deleted))
+            .where(t_col(Series.tvdb_id).in_(deleted))
         session.exec(deletions)
 
         orphans = select(Episode)\
-            .where(~Episode.season_episodes.any())
+            .where(~t_col(Episode.season_episodes).any())
 
         for orphan in session.exec(orphans).all():
             session.delete(orphan)

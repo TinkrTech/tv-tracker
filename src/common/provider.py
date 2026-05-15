@@ -9,7 +9,7 @@ from datetime import date
 
 from common.model import *
 from common import cache
-from typing import Optional
+from typing import Optional, Iterable
 
 
 @dataclass(slots=True, frozen=True)
@@ -110,7 +110,7 @@ class TVDBProvider:
             ))
         return results
 
-    def _fetch_all_episodes(self, series: Series, orders: list[str]) -> list[Episode]:
+    def _fetch_all_episodes(self, series: Series, orders: Iterable[str]) -> list[Episode]:
         """
         Fetch all episodes and ordering for a series
         Updates the seasons in a series with SeasonEpisodes which are linked to episodes
@@ -154,8 +154,8 @@ class TVDBProvider:
                     episode=episode,
                     number=episode_num,
                 ))
+        return list(episodes.values())
 
-        return episodes
 
     def _extract_series(self, response: dict) -> Series:
         """Extract relevant info from the series/{series_id}/extended response"""
@@ -176,7 +176,7 @@ class TVDBProvider:
     def _extract_seasons(self, response: dict) -> list[Season]:
         """Extract seasons from the series/{series_id}/extended response"""
         seasons = []
-        for raw in response.get("seasons"):
+        for raw in response.get("seasons", []):
             seasons.append(Season(
                 tvdb_id=int(raw["id"]),
                 number=int(raw["number"]),

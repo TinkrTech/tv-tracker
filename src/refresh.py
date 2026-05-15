@@ -13,7 +13,7 @@ class Provider(Protocol):
         ...
 
 
-def add_args(parser: ap.ArgumentParser):
+def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("--force", default=False, action="store_true", help="Force refresh all series")
 
 
@@ -22,7 +22,7 @@ def fetch_series(provider: Provider, config: SeriesConfig) -> Series:
     return provider.get_all(config)
 
 
-async def _refresh(provider: Provider, args: ap.Namespace):
+async def _refresh(provider: Provider, args: ap.Namespace) -> None:
     cache.fix_configs()
     if args.force:
         where=True
@@ -36,7 +36,7 @@ async def _refresh(provider: Provider, args: ap.Namespace):
     cache.update(updated)
 
 
-def refresh(provider: Provider, args: ap.Namespace):
+def refresh(provider: Provider, args: ap.Namespace) -> None:
     _sync_refresh = utils.compose(asyncio.run, _refresh)
     _spinner_refresh = utils.with_spinner(_sync_refresh, "Refreshing")
-    return _spinner_refresh(provider, args)
+    _spinner_refresh(provider, args)

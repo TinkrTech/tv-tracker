@@ -17,5 +17,12 @@ A simple CLI for keeping up-to-date with your favourite shows!
         ```
 2. Run `uv run src/main.py`
 
+# License
+
+This project is licensed under the GNU General Public License v3.0
+or (at your option) any later version.
+
+See the LICENSE file for details.
+
 ---
 [<img src="docs/tvdb-attribution.png" width=50> Metadata provided by TheTVDB. Please consider adding missing information or subscribing.](https://thetvdb.com/subscribe)

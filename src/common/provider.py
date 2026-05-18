@@ -1,3 +1,7 @@
+# Copyright (C) 2026 Jade T
+# SPDX-License-Identifier: GPL-3.0+
+# Author: Jade T <jade@tinkrtech.net>
+
 """
 Note: This uses unsanitized inputs for routing. Use caution when loading config.toml
 """

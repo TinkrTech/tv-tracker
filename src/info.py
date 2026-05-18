@@ -1,3 +1,7 @@
+# Copyright (C) 2026 Jade T
+# SPDX-License-Identifier: GPL-3.0+
+# Author: Jade T <jade@tinkrtech.net>
+
 # So named to avoid name shadowing for stdlib module
 import argparse as ap
 import logging as log

@@ -1,3 +1,7 @@
+# Copyright (C) 2026 Jade T
+# SPDX-License-Identifier: GPL-3.0+
+# Author: Jade T <jade@tinkrtech.net>
+
 import logging as log
 from pathlib import Path
 

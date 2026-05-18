@@ -3,6 +3,8 @@ name = "tv-tracker"
 version = "0.1.0"
 description = "Get notified when new episodes and seasons of TV Shows get released"
 readme = "README.md"
+license = "GPL-3.0+"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [
     "mypy>=1.18.2",

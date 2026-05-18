@@ -1,18 +1,19 @@
 # So named to avoid name shadowing for stdlib module
 import argparse as ap
 import logging as log
-import dataclasses
-from typing import Any
+import typing
+from typing import Any, Iterable, Collection
 
 from common import cache
 from common.model import Series
 
 
-SERIES_FIELDS = tuple(field.name for field in dataclasses.fields(Series)
-                      if field.name not in ["seasons"])
-
-
 def validate_field_name(value: str):
+    SERIES_FIELDS = tuple(
+        field.name for field in typing.cast(dict, Series.__fields__)
+        if field.name not in ["seasons"]
+    )
+
     if value.lower() not in SERIES_FIELDS:
         msg = f"field must be one of {SERIES_FIELDS} not '{value}'\n"
         log.error(msg)
@@ -28,14 +29,15 @@ def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("-s", "--strict", default=False, action="store_true", help="Only match titles which exactly match.")
 
 
-def as_view(fields: list[str], series: Series) -> dict[str, Any]:
-    series = dataclasses.asdict(series)
-    return {field: series[field] for field in fields}
+def as_view(fields: Iterable[str], series: Series) -> dict[str, Any]:
+    series_dict = series.model_dump()
+    return {field: series_dict[field] for field in fields}
 
 
-def output_as_csv(fields: list[str], all_series: list[Series], delimeter=",", with_headers=False) -> None:
+def output_as_csv(fields: Collection[str], all_series: Iterable[Series], delimeter=",", with_headers=False) -> None:
     import csv, sys
-    writer = csv.DictWriter(sys.stdout, fields, delimiter=delimeter)
+
+    writer: csv.DictWriter = csv.DictWriter(sys.stdout, fields, delimiter=delimeter)
     if with_headers:
         writer.writeheader()
 
@@ -43,16 +45,16 @@ def output_as_csv(fields: list[str], all_series: list[Series], delimeter=",", wi
         writer.writerow(as_view(fields, series))
 
 
-def output_as_toml(fields: list[str], all_series: list[Series]) -> None:
+def output_as_toml(fields: Iterable[str], all_series: Iterable[Series]) -> None:
     from datetime import date
 
     for i, series in enumerate(all_series):
         if i != 0:
             print()
         print(f"['{series.stub_info()}']")
-        series = as_view(fields, series)
+        series_dict: dict = as_view(fields, series)
         for field in fields:
-            value = series[field]
+            value = series_dict[field]
             if isinstance(value, date):
                 formatted = f'"{value}"'
             elif isinstance(value, bool):
@@ -63,10 +65,9 @@ def output_as_toml(fields: list[str], all_series: list[Series]) -> None:
 
 
 def info(args: ap.Namespace) -> None:
-    cache.load()
-    tracked = list(cache.find(args.title, strict=args.strict))
+    tracked = cache.find(args.title, strict=args.strict)
 
-    fields = args.fields if args.fields is not None else SERIES_FIELDS
+    fields = args.fields if args.fields is not None else typing.cast(dict, Series.__fields__).keys()
     output_csvlike = lambda delimeter: output_as_csv(fields, tracked, with_headers=args.with_headers, delimeter=delimeter)
     if args.format == "csv":
         output_csvlike(delimeter=",")

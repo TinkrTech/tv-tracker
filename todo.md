@@ -1,9 +1,13 @@
+- [ ] Fetch-Episodes
+    - [ ] Add "order" option
 - [ ] Info
     - [ ] Allow format strings?
     - [ ] Allow for querying?
-        - [ ] Might be prudent to refactor cache into a sqlite database for easier querying
-- [-] Rework cache configuration i.e. use_order and use_language into a sub-object
-    - [-] Is this even worth the effort?
-- [x] BUG: Fetching leverage gives leverage: redemption as the first option
-    - [-] Sort by similarity to search term
-    - [x] Sort by size.
+    - [ ] Add additional default query fields: language, order, all_orders (Season count per order), etc
+- [ ] Track
+    - [ ] Make case insensitive (e.g. severance)
+- [ ] Cache db
+    - add a settings.json
+
+- [ ] Testing:
+    - [ ] Add pytest tests

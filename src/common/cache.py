@@ -1,80 +1,223 @@
-import tomllib
-from collections.abc import Iterable, Iterator
+import logging as log
+from pathlib import Path
 
-from common.model import Series
+import typing
+from typing import Iterable, Sequence
+
+import sqlmodel
+from sqlmodel import SQLModel, select, delete as delete_, or_, and_, func, text as text_
+from sqlmodel.sql.expression import SelectOfScalar as Select, ColumnElement
+from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import QueryableAttribute
+
+from common.model import Series, Season, Episode, SeasonEpisode, SeriesConfig
 
 
-PATH: str = ''
-__CACHE: list[Series] = []
-__LOADED = False
+__ENGINE = None
+type SeriesId = int
+type Column = ColumnElement
+type Where = bool|ColumnElement[bool]
 
 
-def load() -> list[Series]:
-    global PATH, __CACHE, __LOADED
-    assert PATH != ''
+def t_col[T](val: T) -> ColumnElement[T]:
+    """Coerce type into a ColumnElement"""
+    return typing.cast(ColumnElement[T], val)
 
-    if not __LOADED:
-        with open(PATH, 'rb') as cfg:
-            entries = tomllib.load(cfg)
 
-        __CACHE = [Series(**entry) for entry in entries.values()]
-        __LOADED = True
-    return __CACHE
+def t_attr[T](val: T) -> QueryableAttribute[T]:
+    """Coerce type into a QueryableAttribute"""
+    return typing.cast(QueryableAttribute[T], val)
+
+
+def initialize(path: Path|None) -> None:
+    global __ENGINE
+
+    if __ENGINE is not None:
+        return
+
+    if path is None:
+        log.warn("Trying to initialize database with no path. NOTHING FROM THIS SESSION WILL BE SAVED!")
+        uri = "sqlite:///:memory:"
+    else:
+        uri = f"sqlite:///{path}"
+
+    __ENGINE = sqlmodel.create_engine(uri)
+
+    with sqlmodel.Session(__ENGINE) as session:
+        session.execute(text_("PRAGMA foreign_keys = ON"))
+        session.commit()
+
+    SQLModel.metadata.create_all(__ENGINE)
+    log.debug(f"Loaded engine from '{uri}'")
+
+
+def result_of[T](
+        selection: Select[T],
+        *,
+        where: Where|Iterable[Where]=True,
+        order_by: Column|None=None
+    ) -> Sequence[T]:
+    global __ENGINE
+
+    if isinstance(where, Iterable):
+        where = and_(*where)
+
+    query = selection\
+        .where(where)\
+        .order_by(order_by)
+
+    with sqlmodel.Session(__ENGINE) as session:
+        return session.exec(query).all()
+
+
+def select_series() -> Select[Series]:
+    return select(Series).options(
+        selectinload(t_attr(Series.config))
+    )
+
+
+def select_seasons(*, series_id: SeriesId|None = None) -> Select[Season]:
+    return select(Season)\
+        .where(Season.series_id == series_id)\
+        .options(
+            selectinload(t_attr(Season.season_episodes))\
+            .selectinload(t_attr(SeasonEpisode.episode))
+        )
+
+
+def migrate_toml(old: Path) -> None:
+    import tomllib
+    from datetime import date
+
+    assert old.exists()
+    assert old.suffix == ".toml"
+    assert __ENGINE != None
+
+    def load_one(entry: dict) -> Series:
+        config = SeriesConfig(
+            series_id=entry["tvdb_id"],
+            order=entry.get("use_order"),
+            language=entry.get("use_language"),
+        )
+        series = Series(
+            tvdb_id=entry["tvdb_id"],
+            title=entry["title"],
+            year=entry["year"],
+            last_aired=date.fromisoformat(entry["last_aired"]),
+            retrieved=date.fromisoformat(entry["retrieved"]),
+            keep_updated=entry["keep_updated"],
+            config=config,
+        )
+        return series
+
+    with open(old, "rb") as cfg:
+        entries = tomllib.load(cfg)
+        items = [load_one(entry) for entry in entries.values()]
+
+    log.debug(f"Loaded {len(items)} items")
+
+    with sqlmodel.Session(__ENGINE) as session:
+        session.add_all(items)
+        session.commit()
+
+    count_added = len(result_of(select_series()))
+    log.debug(f"Added {count_added} items")
 
 
 def has(tvdb_id: int) -> bool:
-    global __CACHE
-    assert isinstance(tvdb_id, int)
-
-    load()
-
-    cached_ids = [cached.tvdb_id for cached in __CACHE]
-    return tvdb_id in cached_ids
+    result = result_of(
+        select_series(),
+        where=(Series.tvdb_id == tvdb_id)
+    )
+    return len(result) != 0
 
 
-def find(titles: str|list[str], *, strict=False) -> Iterator[Series]:
-    global __CACHE
-    assert titles is not None
-
-    load()
-
-    if not isinstance(titles, list):
+def _titles_match(titles: str|Iterable[str], strict: bool=True) -> Where:
+    if isinstance(titles, str):
         titles = [titles]
 
+    titles = map(lambda x: x.lower(), titles)
+
     if strict:
-        matches = lambda x, y: x == y
+        titles_match: ColumnElement = func.lower(Series.title).in_(titles)
     else:
-        matches = lambda x, y: x in y
-
-    results = []
-    for title in titles:
-        for series in __CACHE:
-            if matches(title.lower(), series.title.lower()):
-                results.append(series)
-
-    results_by_length = sorted(results, key=lambda item: len(item.title))
-    for result in results_by_length:
-        yield result
+        titles_match = or_(
+            *(
+                func.lower(Series.title).like(f"%{title}%")
+                for title in titles
+            )
+        )
+    return titles_match
 
 
-def add(item: Series) -> None:
-    global PATH, __CACHE
-
-    if has(item.tvdb_id):
-        print(f"WARNING: \"{item.stub_info()}\" is already being tracked. Skipping...")
-        return
-
-    with open(PATH, 'a') as cfg:
-        cfg.write(str(item) + "\n\n")
-
-    __CACHE.append(item)
+def find(titles: str|list[str], *, strict:bool=False) -> Sequence[Series]:
+    return result_of(
+        select_series(),
+        where=_titles_match(titles, strict=strict),
+        order_by=func.char_length(t_col(Series.title))
+    )
 
 
-def update(updated: Iterable[Series]) -> None:
-    global PATH, __CACHE
+def series_orders(series_id: SeriesId, *, with_count: bool = False):
+    if with_count:
+        cols = (Season.order, func.count(t_col(Season.order)))
+    else:
+        cols = (Season.order)
 
-    with open(PATH, "w") as cfg:
-        for item in updated:
-            cfg.write(str(item) + "\n\n")
+    query = select(cols)\
+        .where(Season.series_id == series_id)\
+        .group_by(Season.order)\
+        .order_by(Season.order)
+    return result_of(query)
 
-    __CACHE = list(updated)
+
+def fix_configs() -> None:
+    global __ENGINE
+
+    with sqlmodel.Session(__ENGINE) as session:
+        all_series = session.exec(select_series()).all()
+
+        for series in all_series:
+            if not series.config:
+                config = SeriesConfig(series_id=series.tvdb_id, series=series)
+                session.add(config)
+        session.commit()
+
+
+def add(items: SQLModel|Iterable[SQLModel]) -> None:
+    global __ENGINE
+
+    if isinstance(items, SQLModel):
+        items = [items]
+
+    with sqlmodel.Session(__ENGINE) as session:
+        session.add_all(items)
+        session.commit()
+
+
+def update(items: SQLModel|Iterable[SQLModel]) -> None:
+    global __ENGINE
+
+    if isinstance(items, SQLModel):
+        items = [items]
+
+    with sqlmodel.Session(__ENGINE) as session:
+        for item in items:
+            session.merge(item)
+        session.commit()
+
+
+def delete(deleted: Iterable[SeriesId]) -> None:
+    global __ENGINE
+
+    with sqlmodel.Session(__ENGINE) as session:
+        deletions = delete_(Series)\
+            .where(t_col(Series.tvdb_id).in_(deleted))
+        session.exec(deletions)
+
+        orphans = select(Episode)\
+            .where(~t_col(Episode.season_episodes).any())
+
+        for orphan in session.exec(orphans).all():
+            session.delete(orphan)
+        session.commit()

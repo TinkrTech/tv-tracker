@@ -1,6 +1,7 @@
 import os, dotenv, sys
 import logging
 import argparse
+from pathlib import Path
 
 import info
 import fetch_episodes
@@ -12,16 +13,24 @@ import track
 from common.provider import TVDBProvider
 from common import cache
 from common import utils
-from common import model
+
+
+def get_api_key() -> str:
+    key = os.getenv('TVDB_KEY')
+    if key is None:
+        raise NameError("environment is missing TVDB_KEY")
+    return key
 
 
 def get_args() -> argparse.Namespace:
     defaults = argparse.ArgumentParser(add_help=False)
     defaults.add_argument(
         "-c", "--cache-path",
-        default="data/cache.toml",
-        help="The location of config.toml"
+        default=Path("data/cache.db"),
+        type=Path,
+        help="The location of the cache database"
     )
+
     defaults.add_argument(
         "-A", "--no-animations",
         default=False,
@@ -60,20 +69,17 @@ def get_args() -> argparse.Namespace:
     fetch_episodes.add_args(make_parser("fetch-episodes",   "Fetches episodes list for a tracked series and displays it."))
 
     args = parser.parse_args()
-    if args.no_animations:
-        utils.USE_ANIMATIONS = False
     return args
 
 
 def _list(args: argparse.Namespace) -> None:
-    tracked = cache.load()
-
     if len(args.title) > 0:
-        tracked = list(cache.find(args.title, strict=args.strict))
+        tracked = cache.find(args.title, strict=args.strict)
+    else:
+        tracked = cache.result_of(cache.select_series())
 
     for i, series in enumerate(tracked, 1):
         print(f"{i} - {series.stub_info()}")
-
 
 
 def init_error_logger() -> None:
@@ -97,16 +103,51 @@ def init_verbose_logger() -> None:
     logger.addHandler(info_handler)
 
 
-def main():
+def _force_refresh() -> None:
+    parser = argparse.ArgumentParser()
+    refresh.add_args(parser)
+    args = parser.parse_args(["--force"])
+    refresh.refresh(TVDBProvider(get_api_key()), args)
+
+
+def initialize_cache(args: argparse.Namespace) -> None:
+    old_cache = None
+    old_default_cache = Path("data/cache.toml")
+
+    if args.cache_path.suffix == 'toml':
+        old_cache = args.cache_path
+        args.cache_path = args.cache_path.with_suffix('db')
+    elif not args.cache_path.exists() and old_default_cache.exists():
+        old_cache = old_default_cache
+
+    cache.initialize(args.cache_path)
+
+    if old_cache is not None and old_cache.exists():
+        logging.info(f"The cache '{old_cache}' will be upgraded to sqlite.")
+        logging.info(f"New data will be saved to '{args.cache_path}'")
+        try:
+            cache.migrate_toml(old_cache)
+        except Exception as e:
+            args.cache_path.unlink()
+            raise e
+        _force_refresh()
+    elif old_cache is not None:
+        logging.info(f"Cache file '{old_cache}' was not found. A new cache will be started.")
+    else:
+        logging.debug(f"No existing cache.")
+
+
+def main() -> None:
     init_error_logger()
     args = get_args()
     dotenv.load_dotenv()
     if not args.quiet:
         init_verbose_logger()
 
-    cache.PATH = args.cache_path
     utils.USE_ANIMATIONS = not args.no_animations
     utils.QUIET = args.quiet
+
+    initialize_cache(args)
 
     make_provider = utils.with_spinner(TVDBProvider, "Fetching session token")
 
@@ -121,19 +162,16 @@ def main():
             modify.modify(args)
         case "track":
             track.track(
-                make_provider(os.getenv('TVDB_KEY')),
+                make_provider(get_api_key()),
                 args
             )
         case "refresh":
             refresh.refresh(
-                make_provider(os.getenv('TVDB_KEY')),
+                make_provider(get_api_key()),
                 args
             )
         case "fetch-episodes":
-            fetch_episodes.fetch_episodes(
-                make_provider(os.getenv('TVDB_KEY')),
-                args
-            )
+            fetch_episodes.fetch_episodes(args)
 
 
 

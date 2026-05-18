@@ -6,14 +6,14 @@ from typing import Protocol
 from common.provider import SearchResult
 from common import utils
 from common import cache
-from common.model import Series
+from common.model import SeriesConfig, Series
 
 # This class is used for Duck-Typing; if it walks like a duck and quacks like a duck, it's a duck
 class Provider(Protocol):
-    def search(self, query: dict|None, translate: str) -> list[SearchResult]:
+    def search(self, query: dict, translate: str) -> list[SearchResult]:
         ...
 
-    def get_series_info(self, series_id: int, use_language: str|None, use_order: str|None) -> Series:
+    def fetch_series(self, config: SeriesConfig) -> Series:
         ...
 
 
@@ -54,6 +54,16 @@ def track(provider: Provider, args: ap.Namespace):
     else:
         to_add = utils.select(f"Select one of the following:\n   * = already tracked", matches)
 
-    _get_series_info = utils.with_spinner(provider.get_series_info, "Fetching full series info")
-    to_track = _get_series_info(series_id=to_add.tvdb_id, use_language=args.translate)
-    cache.add(to_track)
+    if cache.has(to_add.tvdb_id):
+        log.warn(f"'{to_add.stub_info()}' is already being tracked. Skipping...")
+        return
+
+    config = SeriesConfig(
+        series_id=to_add.tvdb_id,
+        order="default",
+        language=args.translate,
+    )
+    _get_full_info = utils.with_spinner(provider.fetch_series, "Fetching full series info")
+    series = _get_full_info(config=config)
+
+    cache.add(series)

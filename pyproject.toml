@@ -10,5 +10,6 @@ dependencies = [
     "pytest>=8.4.2",
     "python-dotenv>=1.1.1",
     "requests>=2.32.4",
+    "sqlmodel>=0.0.38",
     "types-requests>=2.32.4.20250913",
 ]

@@ -6,6 +6,7 @@
     - [ ] Add additional default query fields: language, order, all_orders (Season count per order), etc
 - [ ] Cache db
     - add a settings.json
-
+- [ ] Modify
+    - [ ] store valid translation languages in series
 - [ ] Testing:
     - [ ] Add pytest tests

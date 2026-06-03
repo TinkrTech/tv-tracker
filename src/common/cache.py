@@ -178,6 +178,14 @@ def series_orders(series_id: SeriesId, *, with_count: bool = False):
     return result_of(query)
 
 
+def is_valid_order(series: Series, order: str) -> bool:
+    orders = series_orders(series.tvdb_id)
+    is_valid = order in orders
+    if not is_valid:
+        log.warning(f"Supported orders for \"{series.stub_info()}\" are {orders}")
+    return is_valid
+
+
 def fix_configs() -> None:
     global __ENGINE
 

@@ -13,6 +13,7 @@ from common.model import Series, Season
 
 def add_args(parser: ap.ArgumentParser) -> None:
     parser.add_argument("title", help="The title of the series.")
+    parser.add_argument("-o", "--order", help="The episode order to use. e.g. 'official'")
     parser.add_argument("-s", "--season", type=int, help="The season number to fetch.")
     parser.add_argument("--name-only", default=False, action="store_true", help="Only output the name of the series.")
 
@@ -23,14 +24,21 @@ def fetch_episodes(args: ap.Namespace) -> None:
     if len(tracked) == 0:
         log.warning(f"No tracked series matched the title '{args.title}'. Skipping...")
         return
-    if len(tracked) > 1:
+    elif len(tracked) > 1:
         log.info(f"Matched {len(tracked)} items.")
         selection: Series = utils.select("Select one of the following", tracked)
     else:
         selection = tracked[0]
 
+    order = selection.config.order
+    if args.order:
+        if cache.is_valid_order(selection, args.order):
+            order = args.order
+        else:
+            log.warning(f"Using the default order ({order}) instead...")
+
     where = [
-        Season.order == selection.config.order,
+        Season.order == order,
     ]
 
     if args.season is not None:

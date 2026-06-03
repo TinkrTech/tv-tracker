@@ -1,5 +1,3 @@
-- [ ] Fetch-Episodes
-    - [ ] Add "order" option
 - [ ] Info
     - [ ] Allow format strings?
     - [ ] Allow for querying?

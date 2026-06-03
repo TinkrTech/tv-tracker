@@ -20,13 +20,6 @@ from common import cache
 from common import utils
 
 
-def get_api_key() -> str:
-    key = os.getenv('TVDB_KEY')
-    if key is None:
-        raise NameError("environment is missing TVDB_KEY")
-    return key
-
-
 def get_args() -> argparse.Namespace:
     defaults = argparse.ArgumentParser(add_help=False)
     defaults.add_argument(
@@ -95,11 +88,22 @@ def init_verbose_logger() -> None:
     logger.addHandler(info_handler)
 
 
+def make_provider():
+    fetch_session_token = utils.with_spinner(TVDBProvider.fetch_session_token, "Fetching session token")
+
+    api_key = os.getenv('TVDB_KEY')
+    if api_key is None:
+        raise NameError("environment is missing TVDB_KEY")
+    session_token = fetch_session_token(api_key)
+
+    return TVDBProvider(session_token)
+
+
 def _force_refresh() -> None:
     parser = argparse.ArgumentParser()
     refresh.add_args(parser)
     args = parser.parse_args(["--force"])
-    refresh.refresh(TVDBProvider(get_api_key()), args)
+    refresh.refresh(make_provider(), args)
 
 
 def initialize_cache(args: argparse.Namespace) -> None:
@@ -141,8 +145,6 @@ def main() -> None:
 
     initialize_cache(args)
 
-    make_provider = utils.with_spinner(TVDBProvider, "Fetching session token")
-
     match args.command:
         case "info":
             info.info(args)
@@ -154,12 +156,12 @@ def main() -> None:
             modify.modify(args)
         case "track":
             track.track(
-                make_provider(get_api_key()),
+                make_provider(),
                 args
             )
         case "refresh":
             refresh.refresh(
-                make_provider(get_api_key()),
+                make_provider(),
                 args
             )
         case "fetch-episodes":

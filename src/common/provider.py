@@ -54,10 +54,11 @@ class SearchResult:
 
 
 class TVDBProvider:
-    def __init__(self, api_token: str):
-        self._session_token = self._get_session_token(api_token)
+    def __init__(self, session_token: str):
+        self._session_token = session_token
 
-    def _get_session_token(self, api_token: str) -> str:
+    @staticmethod
+    def fetch_session_token(api_token: str) -> str:
         """
         throws: requests.exceptions.HTTPError
         """

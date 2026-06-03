@@ -4,8 +4,6 @@
     - [ ] Allow format strings?
     - [ ] Allow for querying?
     - [ ] Add additional default query fields: language, order, all_orders (Season count per order), etc
-- [ ] Track
-    - [ ] Make case insensitive (e.g. severance)
 - [ ] Cache db
     - add a settings.json
 

@@ -44,7 +44,7 @@ def track(provider: Provider, args: ap.Namespace):
     results = _search(query=query, translate=args.translate)
 
     same_language = lambda x: args.language is None or args.language == x.language
-    title_is_similar = lambda x: args.title in x.title
+    title_is_similar = lambda x: args.title.lower() in x.title.lower()
     matches = list(filter(utils.intersect(same_language, title_is_similar), results))
 
     if len(matches) == 0:

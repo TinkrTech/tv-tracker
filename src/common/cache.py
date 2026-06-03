@@ -11,6 +11,7 @@ from typing import Iterable, Sequence
 import sqlmodel
 from sqlmodel import SQLModel, select, delete as delete_, or_, and_, func, text as text_
 from sqlmodel.sql.expression import SelectOfScalar as Select, ColumnElement
+from sqlalchemy.sql.elements import ClauseElement
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import QueryableAttribute
 
@@ -63,7 +64,7 @@ def result_of[T](
     ) -> Sequence[T]:
     global __ENGINE
 
-    if isinstance(where, Iterable):
+    if isinstance(where, Iterable) and not isinstance(where, ClauseElement):
         where = and_(*where)
 
     query = selection\

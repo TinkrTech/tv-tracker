@@ -141,14 +141,16 @@ def _titles_match(titles: str|Iterable[str], strict: bool=True) -> Where:
     if isinstance(titles, str):
         titles = [titles]
 
-    titles = map(lambda x: x.lower(), titles)
-
     if strict:
-        titles_match: ColumnElement = func.lower(Series.title).in_(titles)
+        titles_match: ColumnElement = func.lower(Series.title)\
+            .in_(
+                title.lower()
+                for title in titles
+            )
     else:
         titles_match = or_(
             *(
-                func.lower(Series.title).like(f"%{title}%")
+                Series.title.ilike(f"%{title}%")
                 for title in titles
             )
         )
@@ -159,7 +161,7 @@ def find(titles: str|list[str], *, strict:bool=False) -> Sequence[Series]:
     return result_of(
         select_series(),
         where=_titles_match(titles, strict=strict),
-        order_by=func.char_length(t_col(Series.title))
+        order_by=t_col(Series.title)
     )
 
 

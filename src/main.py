@@ -13,6 +13,7 @@ import modify
 import refresh
 import remove
 import track
+import list_
 
 from common.provider import TVDBProvider
 from common import cache
@@ -61,10 +62,7 @@ def get_args() -> argparse.Namespace:
         result.set_defaults(which=name)
         return result
 
-    list_parser = make_parser(          "list",             "Lists all tracked series.")
-    list_parser.add_argument("title", nargs="*", help="Only list the info for series containing this title.")
-    list_parser.add_argument("-s", "--strict", default=False, action="store_true", help="Only match titles which exactly match.")
-
+    list_.add_args(make_parser(         "list",             "Lists all tracked series."))
     info.add_args(make_parser(          "info",             "List info for all matched series."))
     refresh.add_args(make_parser(       "refresh",          "Pulls the latest information for tracked series."))
     remove.add_args(make_parser(        "remove",           "Stop tracking one or more series."))
@@ -74,16 +72,6 @@ def get_args() -> argparse.Namespace:
 
     args = parser.parse_args()
     return args
-
-
-def _list(args: argparse.Namespace) -> None:
-    if len(args.title) > 0:
-        tracked = cache.find(args.title, strict=args.strict)
-    else:
-        tracked = cache.result_of(cache.select_series())
-
-    for i, series in enumerate(tracked, 1):
-        print(f"{i} - {series.stub_info()}")
 
 
 def init_error_logger() -> None:
@@ -159,7 +147,7 @@ def main() -> None:
         case "info":
             info.info(args)
         case "list":
-            _list(args)
+            list_.list_(args)
         case "remove":
             remove.remove(args)
         case "modify":

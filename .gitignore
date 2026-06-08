@@ -18,6 +18,9 @@ wheels/
 # MyPy Cache
 .mypy_cache
 
+# Coverage Report
+.coverage
+
 # Things that don't need to be in the repo
 data/
 **/tinker_*.py

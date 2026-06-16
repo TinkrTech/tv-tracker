@@ -58,7 +58,7 @@ def track(provider: Provider, args: ap.Namespace):
     else:
         to_add = utils.select(f"Select one of the following:\n   * = already tracked", matches)
 
-    if cache.has(to_add.tvdb_id):
+    if to_add.is_tracked:
         log.warning(f"'{to_add.stub_info()}' is already being tracked. Skipping...")
         return
 

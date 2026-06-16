@@ -59,7 +59,7 @@ def track(provider: Provider, args: ap.Namespace):
         to_add = utils.select(f"Select one of the following:\n   * = already tracked", matches)
 
     if cache.has(to_add.tvdb_id):
-        log.warn(f"'{to_add.stub_info()}' is already being tracked. Skipping...")
+        log.warning(f"'{to_add.stub_info()}' is already being tracked. Skipping...")
         return
 
     config = SeriesConfig(

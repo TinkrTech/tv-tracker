@@ -41,7 +41,7 @@ def initialize(path: Path|None) -> None:
         return
 
     if path is None:
-        log.warn("Trying to initialize database with no path. NOTHING FROM THIS SESSION WILL BE SAVED!")
+        log.warning("Trying to initialize database with no path. NOTHING FROM THIS SESSION WILL BE SAVED!")
         uri = "sqlite:///:memory:"
     else:
         uri = f"sqlite:///{path}"

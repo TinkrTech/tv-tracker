@@ -53,7 +53,7 @@ def fetch_episodes(args: ap.Namespace) -> None:
     )
 
     if args.season is not None and len(seasons) == 0:
-        log.warn(f"{selection.title} ({selection.config.order} order) has no season {args.season}...")
+        log.warning(f"{selection.title} ({selection.config.order} order) has no season {args.season}...")
 
     for i, season in enumerate(seasons):
         # There is no guarantee that episodes are in order...

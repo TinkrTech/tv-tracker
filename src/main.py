@@ -3,6 +3,7 @@
 # Author: Jade T <jade@tinkrtech.net>
 
 import os, dotenv, sys
+from collections.abc import Sequence
 import logging
 import argparse
 from pathlib import Path
@@ -20,7 +21,9 @@ from common import cache
 from common import utils
 
 
-def get_args() -> argparse.Namespace:
+type Argv_T = Sequence[str] | None
+
+def get_args(argv: Argv_T) -> argparse.Namespace:
     defaults = argparse.ArgumentParser(add_help=False)
     defaults.add_argument(
         "-c", "--cache-path",
@@ -63,7 +66,7 @@ def get_args() -> argparse.Namespace:
     modify.add_args(make_parser(        "modify",           "Modify series' configuration(s)."))
     fetch_episodes.add_args(make_parser("fetch-episodes",   "Fetches episodes list for a tracked series and displays it."))
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     return args
 
 
@@ -133,9 +136,9 @@ def initialize_cache(args: argparse.Namespace) -> None:
         logging.debug(f"No existing cache.")
 
 
-def main() -> None:
+def main(argv: Argv_T = None) -> None:
     init_error_logger()
-    args = get_args()
+    args = get_args(argv)
     dotenv.load_dotenv()
     if not args.quiet:
         init_verbose_logger()

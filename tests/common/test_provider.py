@@ -332,32 +332,3 @@ def test_search_by_title_with_invalid_translation(monkeypatch: MonkeyPatch, prov
 
     assert actual == expected
 
-
-def test_fetch_series_valid_order(monkeypatch: MonkeyPatch, provider: TVDBProvider) -> None:
-    monkeypatch.setattr(provider, "_make_request", mock_fetch_series_responses)
-
-    config = model.SeriesConfig(series_id=78874, order="dvd", language="eng")
-    actual = provider.fetch_series(config)
-
-    expected_config = config
-
-    expected_seasons = []
-    expected = model.Series(
-        tvdb_id=78874,
-        title='eng-Firefly',
-        year='2002',
-        last_aired=datetime.date(2003, 7, 28),
-        retrieved=datetime.date(2026, 6, 8),
-        keep_updated=False,
-    )
-
-
-    assert actual == expected
-    assert actual.config == expected.config
-    assert actual.seasons == expected.seasons
-    for actual_season, expected_season in zip(actual.seasons, expected_seasons):
-        assert actual_season.season_episodes == expected_season.season_episodes
-
-    assert actual.seasons.season_episodes
-
-

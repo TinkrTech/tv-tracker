@@ -1,6 +1,7 @@
 # Copyright (C) 2026 Jade T
 # SPDX-License-Identifier: GPL-3.0+
 # Author: Jade T <jade@tinkrtech.net>
+import pytest
 from unittest import mock
 from typing import assert_never
 import argparse as ap
@@ -45,6 +46,13 @@ def mock_args(title, **kwargs) -> ap.Namespace:
 
     return parser.parse_args(args)
 
+@pytest.fixture
+def mocked_calls():
+    with mock.patch.object(utils, 'select') as mocked_select,\
+        mock.patch.object(utils, 'confirm') as mocked_confirm,\
+        mock.patch.object(cache, 'add') as mocked_cache_add:
+        yield mocked_confirm, mocked_select, mocked_cache_add
+
 
 def test_track_with_no_matches():
     provider = Provider()
@@ -55,10 +63,7 @@ def test_track_with_no_matches():
     # if fetch_series is called then the test will fail on assert_never
 
 
-@mock.patch.object(utils, 'select')
-@mock.patch.object(utils, 'confirm', return_value=True)
-@mock.patch.object(cache, 'add')
-def test_track_with_one_match(mocked_add, mocked_confirm, mocked_select):
+def test_track_with_one_match(mocked_calls):
     title = "Untitled"
     sample_data = [mock_results[0]]
     search_data = [data["search"] for data in sample_data]
@@ -67,6 +72,8 @@ def test_track_with_one_match(mocked_add, mocked_confirm, mocked_select):
     provider = Provider()
     provider.search = lambda query, translate: search_data
     provider.fetch_series = lambda config: series_data
+    mocked_confirm, mocked_select, mocked_add = mocked_calls
+    mocked_confirm.return_value = True
 
     track.track(provider, mock_args(title=title))
 
@@ -75,10 +82,7 @@ def test_track_with_one_match(mocked_add, mocked_confirm, mocked_select):
     mocked_add.assert_called_once_with(series_data)
 
 
-@mock.patch.object(utils, 'select')
-@mock.patch.object(utils, 'confirm')
-@mock.patch.object(cache, 'add')
-def test_track_with_two_matches(mocked_add, mocked_confirm, mocked_select):
+def test_track_with_two_matches(mocked_calls):
     title = "Sample Title"
     sample_data = mock_results[1:3]
     search_data = [data["search"] for data in sample_data]
@@ -88,6 +92,7 @@ def test_track_with_two_matches(mocked_add, mocked_confirm, mocked_select):
     provider = Provider()
     provider.search = lambda query, translate: search_data
     provider.fetch_series = lambda config: series_data
+    mocked_confirm, mocked_select, mocked_add = mocked_calls
     mocked_select.return_value = selection
 
     track.track(provider, mock_args(title=title))
@@ -97,16 +102,14 @@ def test_track_with_two_matches(mocked_add, mocked_confirm, mocked_select):
     mocked_add.assert_called_once_with(series_data)
 
 
-@mock.patch.object(utils, 'select')
-@mock.patch.object(utils, 'confirm')
-@mock.patch.object(cache, 'add')
-def test_track_with_non_matches(mocked_add, mocked_confirm, mocked_select):
+def test_track_with_non_matches(mocked_calls):
     title = "No Matching"
     sample_data = mock_results
     search_data = [data["search"] for data in sample_data]
 
     provider = Provider()
     provider.search = lambda query, translate: search_data
+    mocked_confirm, mocked_select, mocked_add = mocked_calls
 
     track.track(provider, mock_args(title=title))
 
@@ -115,10 +118,8 @@ def test_track_with_non_matches(mocked_add, mocked_confirm, mocked_select):
     mocked_add.assert_not_called()
 
 
-@mock.patch.object(utils, 'select')
-@mock.patch.object(utils, 'confirm')
-@mock.patch.object(cache, 'add')
-def test_track_with_selecting_already_tracked_item(mocked_add, mocked_confirm, mocked_select):
+
+def test_track_with_selecting_already_tracked_item(mocked_calls):
     title = "Sample Title"
     sample_data = mock_results[1:3]
     search_data = [data["search"] for data in sample_data]
@@ -126,6 +127,7 @@ def test_track_with_selecting_already_tracked_item(mocked_add, mocked_confirm, m
 
     provider = Provider()
     provider.search = lambda query, translate: search_data
+    mocked_confirm, mocked_select, mocked_add = mocked_calls
     mocked_select.return_value = selection
 
     track.track(provider, mock_args(title=title))

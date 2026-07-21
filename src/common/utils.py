@@ -72,23 +72,33 @@ def select(prompt: str, options: Sequence[Selectable]) -> Selectable:
 
     prompt += "\n" + "\n".join([f"{i}: {option.stub_info()}" for i, option in enumerate(options)])
     prompt += "\nor 'info <selection>' for more details\n>"
-    while opt := input(prompt).strip().lower():
-        if opt.isdigit():
-            break
 
-        if (not opt.startswith("info")):
-            print(f"Invalid selection '{opt}")
-            continue
-
+    def select_with_info(opt: str) -> int|None:
         opt = opt.removeprefix("info ")
-        if not opt.isdigit():
+        if not opt.isdigit() or int(opt) >= len(options):
             print(f"Invalid selection 'info {opt}'")
-            continue
+            return
 
         print(options[int(opt)].full_info())
-        if confirm("Select this? ", default='n'):
+        if not confirm("Select this? ", default='n'):
+            return
+
+        return int(opt)
+
+    selection = None
+    while opt := input(prompt).strip().lower():
+        if opt.startswith("info"):
+            selection = select_with_info(opt)
+        elif opt.isdigit() and int(opt) < len(options):
+            selection = int(opt)
+        else:
+            print(f"Invalid selection '{opt}")
+
+        if selection is not None:
             break
-    return options[int(opt)]
+
+
+    return options[selection]
 
 
 def with_spinner[T](func: Callable[..., T], message: str = "") -> Callable[..., T]:
